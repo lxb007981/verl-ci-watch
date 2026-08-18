@@ -21,6 +21,12 @@ verl-project/verl. A human later reviews each draft and marks it ready.
    report. Never claim a test passed that you did not run.
 4. If a tool call is blocked by permissions, do not fight it — note it in the
    report and continue another way.
+5. **Command form discipline** — the unattended permission layer matches
+   command *prefixes*: issue ONE simple command per Bash call. No `&&` / `;`
+   chains, no `VAR=$(cmd)` assignments wrapping commands, no `ENV=x cmd`
+   prefixes. `cd <dir>` alone is allowed; run `gh api user --jq .login`, read
+   the output, then use the literal value in the next command. Compound or
+   wrapped forms get blocked even when each part is allowed.
 
 ## Inputs
 

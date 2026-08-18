@@ -1,0 +1,10 @@
+{
+  "gspo-qwen3-8b-fsdp2-vllm_ascend::ray-oom-workers-killed-low-node-memory@actor_rollout_init_model": {
+    "job": "nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend",
+    "verdict": "INFRA",
+    "firstSeen": "2026-08-17",
+    "lastSeen": "2026-08-17",
+    "count": 1,
+    "draftPr": null
+  }
+}

@@ -114,11 +114,12 @@ at the top of the crontab):
 
 Notes:
 
-- The headless run uses `--permission-mode acceptEdits` plus allow/deny tool
-  lists passed as CLI flags (headless runs in an untrusted workspace ignore
-  `.claude/settings.json`; the flags mirror it). To instead rely on the
-  settings file, open `claude` once interactively in the kit directory and
-  accept the trust dialog.
+- **Permission posture**: the unattended agent runs with `--permission-mode
+  acceptEdits` plus a *narrow prefix* bash allowlist + hard denies (`git push
+  origin`, `gh pr ready/merge/comment`, `gh issue create/comment`,
+  `gh run rerun`, `rm -rf`) — see `ALLOW_TOOLS`/`DENY_TOOLS` in `bin/daily.sh`.
+  Broad all-bash access was deliberately NOT granted (draft-then-ask autonomy);
+  the price is PROMPT.md rule 5: the agent must issue simple, single commands.
 - Transient gateway errors (e.g. API 529) are retried once after 60 s.
 - If legitimate analysis commands keep getting blocked, extend the allow list
   (both in `.claude/settings.json` and the `ALLOW_TOOLS`/`DENY_TOOLS` strings
