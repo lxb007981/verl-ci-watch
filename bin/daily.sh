@@ -205,6 +205,16 @@ set -e
 
 if [ "$RC" -ne 0 ]; then
   log "WARN: claude exited with code ${RC}; check logs/${LABEL}-agent.log"
+  # Leave a visible artifact for the morning review even on hard failure.
+  {
+    echo "# verl nightly Ascend CI watch — ${LABEL}"
+    echo
+    echo "- ⚠ Analysis stage FAILED (claude exit ${RC})."
+    echo "- Cause is in the CI run log (or \`logs/${LABEL}-agent.log\` locally);"
+    echo "  typically gateway 529 or missing/expired \`ANTHROPIC_AUTH_TOKEN\`."
+    echo "- Collected data is intact under \`data/${LABEL}/\` — rerun"
+    echo "  \`bin/daily.sh --label ${LABEL} --since-hours <N>\` once recovered."
+  } > "$REPORT"
   [ "$NO_LLM_REPORT" = "1" ] || exit "$RC"
 fi
 
