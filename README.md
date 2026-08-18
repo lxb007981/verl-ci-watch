@@ -114,12 +114,13 @@ at the top of the crontab):
 
 Notes:
 
-- **Permission posture**: the unattended agent runs with `--permission-mode
-  acceptEdits` plus a *narrow prefix* bash allowlist + hard denies (`git push
-  origin`, `gh pr ready/merge/comment`, `gh issue create/comment`,
-  `gh run rerun`, `rm -rf`) — see `ALLOW_TOOLS`/`DENY_TOOLS` in `bin/daily.sh`.
-  Broad all-bash access was deliberately NOT granted (draft-then-ask autonomy);
-  the price is PROMPT.md rule 5: the agent must issue simple, single commands.
+- **Permission posture** (user-approved 2026-08-18): the unattended agent gets
+  broad Bash + WebSearch; safety rests on (a) the dedicated PAT being
+  content-view + PR-create only, (b) hard denies — `git push origin`,
+  `gh pr ready/merge/comment`, `gh issue create/comment`, `gh run rerun`,
+  `rm -rf` — in `ALLOW_TOOLS`/`DENY_TOOLS` in `bin/daily.sh`, and (c) PROMPT.md
+  rule 5 keeping commands in simple form so denies match reliably. Tighten
+  `ALLOW_TOOLS` back to a prefix list if the threat model changes.
 - Transient gateway errors (e.g. API 529) are retried once after 60 s.
 - If legitimate analysis commands keep getting blocked, extend the allow list
   (both in `.claude/settings.json` and the `ALLOW_TOOLS`/`DENY_TOOLS` strings

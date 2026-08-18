@@ -178,10 +178,11 @@ log "starting headless analysis (${#FAILED_JOBS[@]} failed job(s)) — output to
 # Tool permissions are passed as CLI flags because an untrusted workspace's
 # .claude/settings.json entries are silently ignored in headless mode. These
 # mirror .claude/settings.json (which takes over once the dir is trusted).
-# Policy: narrow prefix allowlist (agents must issue simple single commands,
-# see PROMPT.md rule 5) + hard denies: draft PRs may be opened; marking
-# ready / merging / pushing to upstream / commenting are hard-denied.
-ALLOW_TOOLS='Bash(git:*),Bash(gh run:*),Bash(gh api:*),Bash(gh search:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr close:*),Bash(gh auth status),Bash(cd:*),Bash(ls:*),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(rg:*),Bash(find:*),Bash(sed:*),Bash(awk:*),Bash(diff:*),Bash(sort:*),Bash(wc:*),Bash(mkdir:*),Bash(python:*),Bash(pip list:*),Bash(pre-commit:*),WebSearch'
+# Policy (user-approved 2026-08-18): broad Bash + WebSearch — the dedicated
+# PAT is content-view + PR-create only, bounding GitHub-side blast radius.
+# Hard denies still block ready/merge/comment/upstream-push/rerun/rm -rf;
+# PROMPT.md rule 5 keeps commands in simple form so denies match reliably.
+ALLOW_TOOLS='Bash,WebSearch'
 DENY_TOOLS='Bash(git push origin:*),Bash(gh pr ready:*),Bash(gh pr merge:*),Bash(gh pr comment:*),Bash(gh issue create:*),Bash(gh issue comment:*),Bash(gh run rerun:*),Bash(gh workflow:*),Bash(rm -rf:*),WebFetch'
 
 run_claude() {

@@ -32,7 +32,7 @@ jobs:
       GH_TOKEN: ${{ secrets.VERL_FORK_PAT || github.token }}
       ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
       ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
-      CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }} # optional override
+      CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }} # optional model override (empty = gateway default)
     steps:
       - uses: actions/checkout@v4
 
