@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh run:*)",
+      "Bash(gh api:*)",
+      "Bash(gh search:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh pr close:*)",
+      "Bash(gh auth status)",
+      "Bash(git:*)",
+      "Bash(python:*)",
+      "Bash(py_compile:*)",
+      "Bash(pip list:*)",
+      "Bash(pre-commit:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(wc:*)"
+    ],
+    "deny": [
+      "Bash(git push origin:*)",
+      "Bash(gh pr ready:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(gh run rerun:*)",
+      "Bash(gh workflow:*)",
+      "Bash(rm -rf:*)",
+      "WebFetch"
+    ]
+  }
+}

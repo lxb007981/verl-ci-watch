@@ -1,0 +1,59 @@
+name: nightly-verl-ci-watch
+
+on:
+  schedule:
+    # GitHub cron is UTC: 22:30 UTC == 06:30 Asia/Shanghai (GMT+8).
+    # verl's nightly_ascend last wave (19:00 UTC) has a 180-min job timeout,
+    # so runs can finish as late as ~22:15 UTC — don't fire earlier.
+    - cron: "30 22 * * *"
+  workflow_dispatch:
+    inputs:
+      since-hours:
+        description: "Look-back window in hours (default 26)"
+        default: "26"
+      label:
+        description: "Override the dated dir/report label (default: today Asia/Shanghai)"
+
+permissions:
+  contents: write # commit state/reports back to this repo
+
+concurrency:
+  group: nightly-verl-ci-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TZ: Asia/Shanghai # date labels follow GMT+8, same as the local setup
+      # PAT with `repo` scope: read verl CI, push branches to the fork, open
+      # draft PRs. Falls back to this repo's token (analysis-only) if unset.
+      GH_TOKEN: ${{ secrets.VERL_FORK_PAT || github.token }}
+      ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
+      ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+      CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }} # optional override
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Configure git (state commits + fork pushes via gh credential helper)
+        run: |
+          git config user.name "verl-ci-watch"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          gh auth setup-git
+
+      - name: Run watch
+        run: |
+          ARGS=(--since-hours "${{ inputs.since-hours || '26' }}")
+          if [ -n "${{ inputs.label }}" ]; then ARGS+=(--label "${{ inputs.label }}"); fi
+          bash bin/daily.sh "${ARGS[@]}"
+
+      - name: Persist state and reports
+        if: always()
+        run: |
+          git add state reports 2>/dev/null || true
+          git commit -m "watch: run of $(date +%F)" || echo "nothing to commit"
+          git push
