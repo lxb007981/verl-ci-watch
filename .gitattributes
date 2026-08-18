@@ -1,0 +1,5 @@
+# bash scripts and workflow yaml must stay LF everywhere (CI runners, fresh clones)
+*.sh   text eol=lf
+*.yml  text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
