@@ -54,5 +54,14 @@
     "lastSeen": "2026-08-19",
     "count": 1,
     "draftPr": null
+  },
+  "nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend::valueerror-total-available-gpus-less-than-desired-gpus@create_resource_pool": {
+    "job": "nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend",
+    "verdict": "VERL_BUG",
+    "firstSeen": "2026-08-20",
+    "lastSeen": "2026-08-20",
+    "count": 1,
+    "draftPr": null,
+    "note": "PR #7444 moved job to 8-NPU a2b3-8 runner, script still defaults NGPUS_PER_NODE=16. Fix branch ci-fix/gspo-qwen3-8b-8npu pushed to fork lxb007981/verl; draft PR could not be opened (PAT cannot create PRs on verl-project/verl). See state/pending-prs/ci-fix_gspo-qwen3-8b-8npu.md."
   }
 }
