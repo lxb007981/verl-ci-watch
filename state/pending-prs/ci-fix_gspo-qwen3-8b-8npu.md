@@ -1,5 +1,16 @@
 # Pending draft PR — ci-fix/gspo-qwen3-8b-8npu
 
+> **STATUS: CLOSED 2026-08-21 — SUPERSEDED UPSTREAM, DO NOT OPEN.**
+> PR #7456 "[ci] chore: Update ascend ci image" (commit `6cbca9ce`, merged
+> 2026-08-20 13:30 UTC) applied the identical one-line fix
+> (`NGPUS_PER_NODE:-16` → `:-8`) to
+> `tests/special_npu/nightly_ci_ascend/run_gspo_qwen3_8b_fsdp2_npu.sh:25`.
+> Verified on `origin/main`. Opening this branch as a PR would be a duplicate.
+> The job was **skipped** in both 2026-08-20 nightly runs, so #7456 is not yet
+> exercised by a nightly — if the job runs and fails again, investigate fresh
+> (do not assume this old signature). The fork branch is left as-is. See
+> `reports/2026-08-21.md`.
+
 - **Date**: 2026-08-20
 - **PR title**: `[ci] fix: default GSPO Qwen3-8B FSDP2 nightly to 8 NPUs for a2b3-8 runner`
 - **PR URL**: **not opened — blocked by PAT permissions** (see below). Ready-to-open:
