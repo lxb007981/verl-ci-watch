@@ -31,32 +31,41 @@
     "count": 1,
     "draftPr": null
   },
+  "nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend::check-npu-baseline-file-missing-on-runner": {
+    "job": "nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend",
+    "verdict": "INFRA",
+    "firstSeen": "2026-08-22",
+    "lastSeen": "2026-08-22",
+    "count": 1,
+    "draftPr": null,
+    "note": "First run to complete training since #7444 moved the job to a2b3-8 (#7456 NGPUS fix verified, 15/15 steps at WORLD_SIZE=8). check_npu.py then failed in parse_base: FileNotFoundError for run_gspo_qwen3_8b_fsdp2_npu/baseline_gspo_qwen3_8b_fsdp2_npu.txt under /root/.cache/nightly_log/. The a2b3-8 host never had this baseline seeded (job ran on a3-16 before 2026-08-17). Baselines are runner-side artifacts, not in the repo - nothing to PR. Action: seed/regenerate the baseline on the runner. Not a metric regression: no numbers were compared."
+  },
   "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-21",
-    "count": 2,
+    "lastSeen": "2026-08-22",
+    "count": 3,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13. A-values stable night over night (rewards A~0.40 vs B=-0.86; throughput A~165 vs B=87.6): the on-runner baseline reflects an older config. Baselines/check_npu.py are runner-side artifacts under /root/.cache/nightly_log/, not in the repo. Action: regenerate baseline on the runner."
+    "note": "Failing identically in every completed run since >=2026-08-13. A-values stable night over night (Aug 21: rewards A=0.401625 vs B=-0.855600; throughput A=166.53 vs B=87.646; mem A=45.43 vs B=39.30): the on-runner baseline reflects an older config. Baselines/check_npu.py are runner-side artifacts under /root/.cache/nightly_log/, not in the repo. Action: regenerate baseline on the runner."
   },
   "nightlyCI_dapo-moonlight-16b-megatron-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_dapo-moonlight-16b-megatron-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-21",
-    "count": 2,
+    "lastSeen": "2026-08-22",
+    "count": 3,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13; only perf metrics out of band (throughput +8.6%, step +5.1%), accuracy/memory in band. A-values stable night over night. Action: regenerate baseline on the runner."
+    "note": "Failing identically in every completed run since >=2026-08-13; accuracy/memory in band, perf metrics out (Aug 21: throughput +9.47%, step +8.42%), and Aug 21 also probs_diff -22.92% (in band Aug 20). A-values stable night over night. Action: regenerate baseline on the runner."
   },
   "nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-21",
-    "count": 2,
+    "lastSeen": "2026-08-22",
+    "count": 3,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13; both perf metrics out in the faster direction (+45% throughput, -31% step), memory identical to 5 decimals across nights. rewards/mean crossed the 0.05 threshold on 2026-08-21 (diff 0.0648) after being just inside on 2026-08-18 (0.0491) - watch, not a new signature. Action: regenerate baseline on the runner."
+    "note": "Failing identically in every completed run since >=2026-08-13; both perf metrics out in the faster direction (Aug 21: +47.13% throughput, -31.03% step), memory identical to six decimals across nights. rewards/mean crossed the 0.05 threshold on 2026-08-21 (0.0648) and RETREATED to -0.0290 on 2026-08-22 - back in band, watch item closed. Action: regenerate baseline on the runner."
   },
   "nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend",
@@ -65,6 +74,6 @@
     "lastSeen": "2026-08-21",
     "count": 1,
     "draftPr": null,
-    "note": "First completed execution in this watch's window (Aug 19 run skipped it). Training completed 15/15, accuracy/memory in band; only perf metrics out, both in the FASTER direction (+15.2% throughput, -11.6% step). Same stale-baseline class as the a2b3-8 trio. Action: regenerate baseline_gspo_qwen3_30b_megatron_npu.txt on the runner. Secondary watch item: shutdown-time DataLoader worker SIGKILL with cpu_memory_used_gb~1124 on a3-16."
+    "note": "First completed execution in this watch's window (Aug 19 run skipped it). Training completed 15/15, accuracy/memory in band; only perf metrics out, both in the FASTER direction (+15.2% throughput, -11.6% step). Same stale-baseline class as the a2b3-8 trio. Action: regenerate baseline_gspo_qwen3_30b_megatron_npu.txt on the runner. Secondary watch item: shutdown-time DataLoader worker SIGKILL with cpu_memory_used_gb~1124 on a3-16. Did not fail on 2026-08-22 (job not among failed jobs in the 19:12 run)."
   }
 }

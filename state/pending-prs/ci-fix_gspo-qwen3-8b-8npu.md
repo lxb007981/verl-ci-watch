@@ -11,6 +11,15 @@
 > (do not assume this old signature). The fork branch is left as-is. See
 > `reports/2026-08-21.md`.
 
+> **Addendum 2026-08-22 — upstream fix #7456 verified in production.** Run
+> [32517296255](https://github.com/verl-project/verl/actions/runs/32517296255)
+> (job [96882636513](https://github.com/verl-project/verl/actions/runs/32517296255/job/96882636513))
+> completed training for the first time since the runner move: 15/15 steps,
+> `WORLD_SIZE = 8`, healthy final metrics. The job now fails only because the
+> a2b3-8 runner lacks `baseline_gspo_qwen3_8b_fsdp2_npu.txt` (new INFRA
+> signature, see `seen-failures.json`). This record stays CLOSED; nothing to
+> reopen. See `reports/2026-08-22.md`.
+
 - **Date**: 2026-08-20
 - **PR title**: `[ci] fix: default GSPO Qwen3-8B FSDP2 nightly to 8 NPUs for a2b3-8 runner`
 - **PR URL**: **not opened — blocked by PAT permissions** (see below). Ready-to-open:
