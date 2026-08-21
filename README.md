@@ -9,7 +9,7 @@ ready), and writes a dated report.
 verl-ci-watch/
 ├── bin/daily.sh        # entry point — collect (deterministic) + analyze (claude -p)
 ├── PROMPT.md           # mission spec handed to the headless agent
-├── .claude/settings.json  # permission allowlist + hard denies (no push, no PR create)
+├── .claude/settings.json  # permission allowlist + hard denies (no upstream push, no ready/merge/comment)
 ├── data/<DATE>/        # runs.json, jobs tsv, failed-job logs        (generated)
 ├── reports/<DATE>.md   # the daily report                            (generated)
 ├── logs/<DATE>-agent.log  # raw headless-agent transcript            (generated)
@@ -58,7 +58,8 @@ tests and backfills. The ephemeral runner loses nothing: the workflow commits
 One-time setup on the kit repo:
 
 ```bash
-gh secret set VERL_FORK_PAT        # PAT (classic) with `repo` scope:
+gh secret set VERL_FORK_PAT        # fine-grained PAT on your fork
+                                   # (Contents + Workflows read/write):
                                    # pushes branches to your fork + opens draft PRs on verl-project/verl
 gh secret set ANTHROPIC_AUTH_TOKEN # API key for your Anthropic-compatible endpoint
 gh secret set ANTHROPIC_BASE_URL   # e.g. https://open.bigmodel.cn/api/anthropic
@@ -85,51 +86,19 @@ Notes:
 - Private-repo usage: a ~45 min/day run ≈ 1.4k Actions minutes/month, inside
   the free 2k tier. A public kit repo would be unlimited, at the cost of
   publishing your reports.
-- Once the dispatch test passes, remove any local interim trigger
-  (e.g. `CronDelete 7f65dabb`) so the job doesn't run twice per day.
 
-## Deployment B: Linux server (24/7)
+## Notes
 
-Prereqs on the server, once:
-
-```bash
-gh auth login          # needs 'repo' scope (read public + push to your fork)
-claude                 # Claude Code CLI installed and authenticated
-git config --global user.name  "..."   # for fix commits
-git config --global user.email "..."
-```
-
-Then:
-
-```bash
-git clone <this-kit> ~/verl-ci-watch   # or rsync it from Windows
-crontab -e
-```
-
-Add (assumes server local time is UTC+8; otherwise set `CRON_TZ=Asia/Shanghai`
-at the top of the crontab):
-
-```
-30 6 * * * ~/verl-ci-watch/bin/daily.sh >> ~/verl-ci-watch/logs/cron.log 2>&1
-```
-
-Notes:
-
-- **Permission posture** (user-approved 2026-08-18): the unattended agent gets
-  broad Bash + WebSearch; safety rests on (a) the dedicated PAT being
-  content-view + PR-create only, (b) hard denies — `git push origin`,
-  `gh pr ready/merge/comment`, `gh issue create/comment`, `gh run rerun`,
-  `rm -rf` — in `ALLOW_TOOLS`/`DENY_TOOLS` in `bin/daily.sh`, and (c) PROMPT.md
-  rule 5 keeping commands in simple form so denies match reliably. Tighten
-  `ALLOW_TOOLS` back to a prefix list if the threat model changes.
+- **Permission posture** (user-approved 2026-08-18): broad Bash + WebSearch
+  for the unattended agent; safety rests on the dedicated PAT and the hard
+  denies — `git push origin`, `gh pr ready/merge/comment`,
+  `gh issue create/comment`, `gh run rerun`, `rm -rf` — in the
+  `ALLOW_TOOLS`/`DENY_TOOLS` strings in `bin/daily.sh` (mirrored in
+  `.claude/settings.json`), plus PROMPT.md rule 5 keeping commands in simple
+  form so denies match reliably.
 - Transient gateway errors (e.g. API 529) are retried once after 60 s.
-- If legitimate analysis commands keep getting blocked, extend the allow list
-  (both in `.claude/settings.json` and the `ALLOW_TOOLS`/`DENY_TOOLS` strings
-  in `bin/daily.sh`), or on a dedicated server account switch to
-  `CLAUDE_FLAGS="--dangerously-skip-permissions"` — the prompt-level "draft
-  only, never ready/merge/comment" rules still apply.
-- `CLAUDE_MODEL`, `CLAUDE_BIN`, `VERL_CI_REPO`, `VERL_CI_WORKFLOW`,
-  `VERL_CI_SINCE_HOURS` are env overrides (see top of `bin/daily.sh`).
+- `CLAUDE_MODEL`, `CLAUDE_BIN`, `VERL_CI_REPO`, `VERL_CI_WORKFLOW` are env
+  overrides (see top of `bin/daily.sh`).
 
 ## Reviewing an auto-opened draft PR
 
@@ -150,7 +119,10 @@ gh pr ready --repo verl-project/verl <number>
 
 Delete the audit `.md` after the PR is merged or closed so it isn't re-reported.
 
-## Housekeeping
+## Housekeeping (local runs only)
+
+On Actions `data/`, `logs/`, and `work/` are gitignored and ephemeral; these
+only matter when you run `bin/daily.sh` locally.
 
 - `work/verl` is reset to `origin/main` at the start of every analysis;
   `ci-fix/*` branches are preserved. Delete a branch after its PR is merged.

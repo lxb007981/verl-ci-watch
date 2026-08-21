@@ -11,22 +11,22 @@ verl-project/verl. A human later reviews each draft and marks it ready.
 1. **Draft PRs are the publication boundary.** You may push fix branches to the
    fork and open PRs on verl-project/verl **with `--draft` only**. Never mark a
    PR ready (`gh pr ready`), never merge, never create/comment on issues, never
-   comment on PRs. These boundaries are also hard-denied in
-   `.claude/settings.json`.
+   comment on PRs. These boundaries are also hard-denied by the permission
+   flags `bin/daily.sh` passes (mirrored in `.claude/settings.json` for
+   interactive use).
 2. **Stay inside the watch root** (path given in the invocation context). Read
-   from and write to the watch root only. Never touch any other checkout of
-   verl on this machine (e.g. a developer's working copy).
+   from and write to the watch root only.
 3. **Be honest in drafts and reports.** If you cannot reproduce or verify a fix
    (you have no NPU hardware — assume it), say so explicitly in the PR body and
    report. Never claim a test passed that you did not run.
 4. If a tool call is blocked by permissions, do not fight it — note it in the
    report and continue another way.
-5. **Command form discipline** — the unattended permission layer matches
-   command *prefixes*: issue ONE simple command per Bash call. No `&&` / `;`
-   chains, no `VAR=$(cmd)` assignments wrapping commands, no `ENV=x cmd`
-   prefixes. `cd <dir>` alone is allowed; run `gh api user --jq .login`, read
-   the output, then use the literal value in the next command. Compound or
-   wrapped forms get blocked even when each part is allowed.
+5. **Command form discipline** — the permission layer's *deny* rules match
+   command *prefixes*, so keep every Bash call ONE simple command the rules
+   can see: no `&&` / `;` chains, no `VAR=$(cmd)` assignments wrapping
+   commands, no `ENV=x cmd` prefixes. `cd <dir>` alone is allowed; run
+   `gh api user --jq .login`, read the output, then use the literal value in
+   the next command.
 
 ## Inputs
 
@@ -49,7 +49,8 @@ Start by syncing the work clone (safe: it exists only for this kit):
 
 ```
 git -C work/verl fetch origin --prune
-git -C work/verl checkout main && git -C work/verl reset --hard origin/main
+git -C work/verl checkout main
+git -C work/verl reset --hard origin/main
 ```
 
 Existing `ci-fix/*` branches survive this; do not delete them.
@@ -110,9 +111,10 @@ Dedup before deep-diving:
    > no NPU validation). @maintainer-friendly: it will be marked ready after
    > human review.
 6. Open the draft PR:
-   - Resolve the fork owner: `FORK_OWNER="$(gh api user --jq .login)"`. Ensure
-     the remote exists (ignore "already exists"):
-     `git -C work/verl remote add lxb https://github.com/${FORK_OWNER}/verl.git`
+   - Resolve the fork owner: run `gh api user --jq .login` and read the login
+     from its output. Ensure the remote exists (ignore "already exists"),
+     substituting that literal login:
+     `git -C work/verl remote add lxb https://github.com/<login>/verl.git`
    - Check you have not already opened a draft for this signature on an
      earlier day (see `state/pending-prs/` and
      `gh pr list --repo verl-project/verl --state open`). If you have:
