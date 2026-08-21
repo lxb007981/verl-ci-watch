@@ -141,6 +141,25 @@ Write the dated report (path in invocation context) with:
 ## Infra noise        — cancelled runs / infra verdicts, one line each
 ```
 
+**Every run id and job id that appears anywhere in the report** (Summary,
+New failures, Still failing, Infra noise, intro) **must be a markdown link**
+to its Actions page, using the link forms from the invocation context — the
+morning reviewer reads the report in a browser and bare numbers are not
+clickable. Keep the id (or job name) as the link text; never paste raw URLs
+into table cells. Examples:
+
+```
+| job | run | verdict | action |
+|---|---|---|---|
+| [nightlyCI_x](<job-url>) | [32403396321](<run-url>) | VERL_BUG | draft #123 |
+
+### nightlyCI_x — [run 32403396321](<run-url>), [job 96536677864](<job-url>)
+```
+
+For repeated mentions later in a section, the heading link suffices; link
+standalone run ids (e.g. cancelled runs, sibling runs in Infra noise) inline
+as `[32409380457](<run-url>)`.
+
 ### 5. Update state
 
 Rewrite `state/seen-failures.json` (create if absent) as:

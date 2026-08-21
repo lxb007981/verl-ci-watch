@@ -126,7 +126,10 @@ write_stub_report() {
     echo
     echo "- No failed jobs in the last ${SINCE_HOURS}h."
     if [ "${#CANCELLED_RUNS[@]}" -gt 0 ]; then
-      echo "- Cancelled runs (infra noise, not analyzed): ${CANCELLED_RUNS[*]}"
+      echo "- Cancelled runs (infra noise, not analyzed):"
+      for rid in "${CANCELLED_RUNS[@]}"; do
+        echo "  - [${rid}](https://github.com/${REPO}/actions/runs/${rid})"
+      done
     fi
     echo "- Raw run metadata: \`data/${LABEL}/runs.json\`"
   } > "$REPORT"
@@ -165,11 +168,14 @@ for entry in "${FAILED_JOBS[@]}"; do
   IFS='|' read -r run_id job_id job_name <<< "$entry"
   safe_name="$(printf '%s' "$job_name" | tr -c 'A-Za-z0-9._-' '_' | sed 's/_*$//;s/^_*//')"
   PROMPT="$PROMPT
-  - ${job_name} — run ${run_id}, job ${job_id}, log: ${LOG_DIR}/r${run_id}_${safe_name}.log"
+  - ${job_name} — run ${run_id}, job ${job_id}, log: ${LOG_DIR}/r${run_id}_${safe_name}.log, url: https://github.com/${REPO}/actions/runs/${run_id}/job/${job_id}"
 done
 
 PROMPT="$PROMPT
 - Cancelled runs in window (report as infra noise only): ${CANCELLED_RUNS[*]:-none}
+- Actions link forms (link every run/job id mentioned in the report to its page):
+  run https://github.com/${REPO}/actions/runs/<runId>
+  job https://github.com/${REPO}/actions/runs/<runId>/job/<jobId>
 - Watch root: ${WATCH_ROOT}
 - Write the dated report to: ${REPORT}"
 

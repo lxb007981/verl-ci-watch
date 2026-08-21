@@ -30,8 +30,9 @@ verl-ci-watch/
    `state/pending-prs/`. Marking a PR ready, merging, commenting, and pushing to
    upstream are hard-denied (prompt + `deny` rules in `.claude/settings.json`
    and mirrored CLI flags in `bin/daily.sh`).
-3. **Report**: `reports/<DATE>.md`. Green or cancelled-only days get a stub
-   report without spending any tokens.
+3. **Report**: `reports/<DATE>.md`. Every run/job id in the report links to its
+   GitHub Actions page (URL forms are injected by `bin/daily.sh`). Green or
+   cancelled-only days get a stub report without spending any tokens.
 
 The nightly workflow fires three waves per day (17:00/18:00/19:00 UTC); jobs
 have a 180-min timeout, so the last wave can finish as late as ~06:15 in
