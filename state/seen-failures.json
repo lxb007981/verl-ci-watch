@@ -35,37 +35,37 @@
     "job": "nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend",
     "verdict": "INFRA",
     "firstSeen": "2026-08-22",
-    "lastSeen": "2026-08-22",
-    "count": 1,
+    "lastSeen": "2026-08-23",
+    "count": 2,
     "draftPr": null,
-    "note": "First run to complete training since #7444 moved the job to a2b3-8 (#7456 NGPUS fix verified, 15/15 steps at WORLD_SIZE=8). check_npu.py then failed in parse_base: FileNotFoundError for run_gspo_qwen3_8b_fsdp2_npu/baseline_gspo_qwen3_8b_fsdp2_npu.txt under /root/.cache/nightly_log/. The a2b3-8 host never had this baseline seeded (job ran on a3-16 before 2026-08-17). Baselines are runner-side artifacts, not in the repo - nothing to PR. Action: seed/regenerate the baseline on the runner. Not a metric regression: no numbers were compared."
+    "note": "Second consecutive green training run since #7444 moved the job to a2b3-8 (2026-08-22 run: WORLD_SIZE=8, 15/15 in 21:09, final score 0.648). check_npu.py fails in parse_base: FileNotFoundError for run_gspo_qwen3_8b_fsdp2_npu/baseline_gspo_qwen3_8b_fsdp2_npu.txt under /root/.cache/nightly_log/. The a2b3-8 host never had this baseline seeded. Baselines are runner-side artifacts, not in the repo - nothing to PR. Action: seed/regenerate the baseline on the runner. Not a metric regression: no numbers were compared. Secondary artifact both nights: shutdown-time DataLoader worker SIGKILL after 15/15 (masked by the '| tee' pipeline; does not fail the step)."
   },
   "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-22",
-    "count": 3,
+    "lastSeen": "2026-08-23",
+    "count": 4,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13. A-values stable night over night (Aug 21: rewards A=0.401625 vs B=-0.855600; throughput A=166.53 vs B=87.646; mem A=45.43 vs B=39.30): the on-runner baseline reflects an older config. Baselines/check_npu.py are runner-side artifacts under /root/.cache/nightly_log/, not in the repo. Action: regenerate baseline on the runner."
+    "note": "Failing identically in every completed run since >=2026-08-13; all five metrics out every night (Aug 22: mem diff 4.298 A=43.60 vs B=39.30; throughput +89.72% A=166.29 vs B=87.65; step -79.12%; rewards diff 1.256 A=0.4005 vs B=-0.8556; probs_diff -76.53%): the on-runner baseline reflects an older config (reward-scale gap). A-values stable night over night. Baselines/check_npu.py are runner-side artifacts under /root/.cache/nightly_log/, not in the repo. Action: regenerate baseline on the runner."
   },
   "nightlyCI_dapo-moonlight-16b-megatron-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_dapo-moonlight-16b-megatron-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-22",
-    "count": 3,
+    "lastSeen": "2026-08-23",
+    "count": 4,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13; accuracy/memory in band, perf metrics out (Aug 21: throughput +9.47%, step +8.42%), and Aug 21 also probs_diff -22.92% (in band Aug 20). A-values stable night over night. Action: regenerate baseline on the runner."
+    "note": "Failing identically in every completed run since >=2026-08-13. Aug 22: step +6.16% (A=438.45 B=413.00) and probs_diff +37.54% (A=0.0346 B=0.0252) out; throughput moved IN band for the first time (+1.76%, A=88.51 - about 7% below the prior-night cluster, largest wobble yet; was +9.47% Aug 21); memory and rewards in band. probs_diff flaps around the 5% threshold night to night (in/-22.92%/+37.54%) - noisy metric, no drift. A-values otherwise stable. Action: regenerate baseline on the runner."
   },
   "nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-22",
-    "count": 3,
+    "lastSeen": "2026-08-23",
+    "count": 4,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13; both perf metrics out in the faster direction (Aug 21: +47.13% throughput, -31.03% step), memory identical to six decimals across nights. rewards/mean crossed the 0.05 threshold on 2026-08-21 (0.0648) and RETREATED to -0.0290 on 2026-08-22 - back in band, watch item closed. Action: regenerate baseline on the runner."
+    "note": "Failing identically in every completed run since >=2026-08-13; both perf metrics out in the faster direction every night (Aug 22: +44.08% throughput A=68.64 B=47.64, -30.77% step A=74.10 B=107.03). Memory A=22.215595 identical to six decimals four nights running. rewards/mean watch item closed: in band since Aug 21 (Aug 22 diff 0.0335, A=0.3656). probs_diff in band. Action: regenerate baseline on the runner."
   },
   "nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend",
@@ -74,6 +74,6 @@
     "lastSeen": "2026-08-21",
     "count": 1,
     "draftPr": null,
-    "note": "First completed execution in this watch's window (Aug 19 run skipped it). Training completed 15/15, accuracy/memory in band; only perf metrics out, both in the FASTER direction (+15.2% throughput, -11.6% step). Same stale-baseline class as the a2b3-8 trio. Action: regenerate baseline_gspo_qwen3_30b_megatron_npu.txt on the runner. Secondary watch item: shutdown-time DataLoader worker SIGKILL with cpu_memory_used_gb~1124 on a3-16. Did not fail on 2026-08-22 (job not among failed jobs in the 19:12 run)."
+    "note": "First completed execution in this watch's window (Aug 19 run skipped it). Training completed 15/15, accuracy/memory in band; only perf metrics out, both in the FASTER direction (+15.2% throughput, -11.6% step). Same stale-baseline class as the a2b3-8 trio. Action: regenerate baseline_gspo_qwen3_30b_megatron_npu.txt on the runner. Secondary watch item: shutdown-time DataLoader worker SIGKILL with cpu_memory_used_gb~1124 on a3-16. Did not fail on 2026-08-22 (job not among failed jobs in the 19:12 run), nor on 2026-08-23 (not among failed jobs in the 19:08 run)."
   }
 }
