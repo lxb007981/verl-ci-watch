@@ -35,10 +35,10 @@
     "job": "nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend",
     "verdict": "INFRA",
     "firstSeen": "2026-08-22",
-    "lastSeen": "2026-08-23",
-    "count": 2,
+    "lastSeen": "2026-08-24",
+    "count": 3,
     "draftPr": null,
-    "note": "Second consecutive green training run since #7444 moved the job to a2b3-8 (2026-08-22 run: WORLD_SIZE=8, 15/15 in 21:09, final score 0.648). check_npu.py fails in parse_base: FileNotFoundError for run_gspo_qwen3_8b_fsdp2_npu/baseline_gspo_qwen3_8b_fsdp2_npu.txt under /root/.cache/nightly_log/. The a2b3-8 host never had this baseline seeded. Baselines are runner-side artifacts, not in the repo - nothing to PR. Action: seed/regenerate the baseline on the runner. Not a metric regression: no numbers were compared. Secondary artifact both nights: shutdown-time DataLoader worker SIGKILL after 15/15 (masked by the '| tee' pipeline; does not fail the step)."
+    "note": "Third consecutive green training run (run 32660302964: 15/15, WORLD_SIZE=8, final score 0.6797); check_npu.py still fails in parse_base with FileNotFoundError for run_gspo_qwen3_8b_fsdp2_npu/baseline_gspo_qwen3_8b_fsdp2_npu.txt under /root/.cache/nightly_log/. The a2b3-8 host never had this baseline seeded. Baselines are runner-side artifacts, not in the repo - nothing to PR. Action: seed/regenerate the baseline on the runner. Not a metric regression: no numbers were compared. Secondary artifact all three nights: shutdown-time DataLoader worker SIGKILL after 15/15 (does not fail the step)."
   },
   "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend",
@@ -47,33 +47,42 @@
     "lastSeen": "2026-08-23",
     "count": 4,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13; all five metrics out every night (Aug 22: mem diff 4.298 A=43.60 vs B=39.30; throughput +89.72% A=166.29 vs B=87.65; step -79.12%; rewards diff 1.256 A=0.4005 vs B=-0.8556; probs_diff -76.53%): the on-runner baseline reflects an older config (reward-scale gap). A-values stable night over night. Baselines/check_npu.py are runner-side artifacts under /root/.cache/nightly_log/, not in the repo. Action: regenerate baseline on the runner."
+    "note": "Failing identically in every completed run since >=2026-08-13; all five metrics out every night (Aug 22: mem diff 4.298 A=43.60 vs B=39.30; throughput +89.72% A=166.29 vs B=87.65; step -79.12%; rewards diff 1.256 A=0.4005 vs B=-0.8556; probs_diff -76.53%): the on-runner baseline reflects an older config (reward-scale gap). A-values stable night over night. Baselines/check_npu.py are runner-side artifacts under /root/.cache/nightly_log/, not in the repo. Action: regenerate baseline on the runner. NOT EVALUATED on 2026-08-24: that night's run died at step 10/15 on an HBM multi-bit ECC hardware fault (new INFRA signature below) before the check step ran; expect this signature to resume once the host is fixed."
+  },
+  "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend::hbm-multi-bit-ecc-error-rollout-engine-dead": {
+    "job": "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend",
+    "verdict": "INFRA",
+    "firstSeen": "2026-08-24",
+    "lastSeen": "2026-08-24",
+    "count": 1,
+    "draftPr": null,
+    "note": "Run 32653793181 / job 97229318565: at step 10/15 the vLLM rollout engine died with 'RuntimeError: HBM MULTI BIT ECC ERROR, EL9999' on Worker_TP1 (Device:1) of host 192.168.9.113; peer rank 0 got AclrtSynchronizeStreamWithTimeout error 507011. EngineDeadError propagated through trainer_base.step -> sleep_replicas -> ensure_alive() and ended the job; check_npu never ran. Uncorrectable device-memory hardware fault - runner maintenance (check/replace the NPU), nothing to fix in verl. gh search issues 'HBM MULTI BIT ECC' on verl-project/verl: 0 hits."
   },
   "nightlyCI_dapo-moonlight-16b-megatron-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_dapo-moonlight-16b-megatron-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-23",
-    "count": 4,
+    "lastSeen": "2026-08-24",
+    "count": 5,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13. Aug 22: step +6.16% (A=438.45 B=413.00) and probs_diff +37.54% (A=0.0346 B=0.0252) out; throughput moved IN band for the first time (+1.76%, A=88.51 - about 7% below the prior-night cluster, largest wobble yet; was +9.47% Aug 21); memory and rewards in band. probs_diff flaps around the 5% threshold night to night (in/-22.92%/+37.54%) - noisy metric, no drift. A-values otherwise stable. Action: regenerate baseline on the runner."
+    "note": "Failing in every completed run since >=2026-08-13. Aug 24 (run 32653793181): THREE metrics out and direction flipped - throughput -13.86% (A=74.93 vs B=86.98), first materially slower-than-baseline night (A-cluster ~95 -> 88.5 -> 74.9 over three completed nights); step +8.38% (A=447.62); probs_diff +50.42% (A=0.0379, the flappy metric, threshold 5%: in/-22.92%/+37.54%/out). Memory (-0.16) and rewards (-0.043) in band. Training 15/15. Only examples/grpo_trainer/*.sh additions (1dda039b) merged since the in-band Aug 22 run - no code path touches this job, so runner variance on 192.168.9.217 is the best explanation. WATCH: if throughput stays ~75 next night, escalate to a real investigation. Action: regenerate baseline_dapo_moonlight-16b_megatron_npu.txt on the runner."
   },
   "nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-23",
-    "count": 4,
+    "lastSeen": "2026-08-24",
+    "count": 5,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13; both perf metrics out in the faster direction every night (Aug 22: +44.08% throughput A=68.64 B=47.64, -30.77% step A=74.10 B=107.03). Memory A=22.215595 identical to six decimals four nights running. rewards/mean watch item closed: in band since Aug 21 (Aug 22 diff 0.0335, A=0.3656). probs_diff in band. Action: regenerate baseline on the runner."
+    "note": "Failing identically in every completed run since >=2026-08-13; both perf metrics out in the faster direction every night (Aug 24, run 32653793181: +51.78% throughput A=72.31 vs B=47.64, -30.94% step A=73.91 vs B=107.03). Memory A=22.215595 identical to six decimals five nights running. rewards/mean in band since Aug 21 (Aug 24 diff 0.0290); probs_diff in band (3.80%). Training 15/15. Action: regenerate baseline on the runner."
   },
   "nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-21",
-    "lastSeen": "2026-08-21",
-    "count": 1,
+    "lastSeen": "2026-08-24",
+    "count": 2,
     "draftPr": null,
-    "note": "First completed execution in this watch's window (Aug 19 run skipped it). Training completed 15/15, accuracy/memory in band; only perf metrics out, both in the FASTER direction (+15.2% throughput, -11.6% step). Same stale-baseline class as the a2b3-8 trio. Action: regenerate baseline_gspo_qwen3_30b_megatron_npu.txt on the runner. Secondary watch item: shutdown-time DataLoader worker SIGKILL with cpu_memory_used_gb~1124 on a3-16. Did not fail on 2026-08-22 (job not among failed jobs in the 19:12 run), nor on 2026-08-23 (not among failed jobs in the 19:08 run)."
+    "note": "Recurred on Aug 24 (run 32656827335) after two green nights (job not among failed jobs on Aug 22/23). Training 15/15; accuracy/memory in band; only perf metrics out, both in the FASTER direction (+13.71% throughput A=33.11 vs B=29.12; step -14.84% A=87.05 vs B=102.22). Same stale-baseline class as the a2b3-8 trio (runner 10.0.2.64). Action: regenerate baseline_gspo_qwen3_30b_megatron_npu.txt on the runner. Secondary watch item: shutdown-time DataLoader worker SIGKILL, does not fail the step."
   }
 }
