@@ -38,16 +38,25 @@
     "lastSeen": "2026-08-24",
     "count": 3,
     "draftPr": null,
-    "note": "Third consecutive green training run (run 32660302964: 15/15, WORLD_SIZE=8, final score 0.6797); check_npu.py still fails in parse_base with FileNotFoundError for run_gspo_qwen3_8b_fsdp2_npu/baseline_gspo_qwen3_8b_fsdp2_npu.txt under /root/.cache/nightly_log/. The a2b3-8 host never had this baseline seeded. Baselines are runner-side artifacts, not in the repo - nothing to PR. Action: seed/regenerate the baseline on the runner. Not a metric regression: no numbers were compared. Secondary artifact all three nights: shutdown-time DataLoader worker SIGKILL after 15/15 (does not fail the step)."
+    "note": "RESOLVED 2026-08-25, did not recur: PR #7541 (7292a74f, merged 2026-08-24 11:46 UTC) made the checking step curl check_npu.py and the baseline from verl-project/verl-ascend-recipe, so the a2b3-8 runner no longer needs a locally seeded file. Superseded by the new metric-validation signature below."
+  },
+  "nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend::check-npu-metric-validation-failed": {
+    "job": "nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend",
+    "verdict": "BASELINE_REGRESSION",
+    "firstSeen": "2026-08-25",
+    "lastSeen": "2026-08-25",
+    "count": 1,
+    "draftPr": null,
+    "note": "First night this job is compared against any baseline (run 32767038291 / job 97558747427, runner a2b3-8, WORLD_SIZE=8, 15/15 steps). Two metrics out: memory A=47.827 vs B=41.884 (+5.94, thr 1), throughput A=248.342 vs B=127.993 (+94.03%, thr 5%); step/rewards/probs_diff in band. PROOF the baseline/a2/.../baseline_gspo_qwen3_8b_fsdp2_npu.txt in verl-ascend-recipe was recorded on a 16-NPU pool: perf/throughput = total_num_tokens/(time*n_gpus) (metric_utils.py:687), and this run's perf/total_num_tokens is 143643-177174 at time_per_step 79.3-86.8s, so baseline B implies 127.9929*79.947007*16 = 163650 tokens/step at n_gpus=16 (matches) vs 81825 at n_gpus=8 (half what the job processes). Same workload, same step time, same numerics - only the GPU-count divisor and per-GPU memory footprint (2 -> 4 samples/GPU after #7444 + #7456 moved the job 16 -> 8 NPUs) differ. Action: regenerate the baseline from an 8-NPU run of main on a2b3-8. Baselines are per-GPU-count-valid; nothing to fix in verl."
   },
   "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-23",
-    "count": 4,
+    "lastSeen": "2026-08-25",
+    "count": 5,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13; all five metrics out every night (Aug 22: mem diff 4.298 A=43.60 vs B=39.30; throughput +89.72% A=166.29 vs B=87.65; step -79.12%; rewards diff 1.256 A=0.4005 vs B=-0.8556; probs_diff -76.53%): the on-runner baseline reflects an older config (reward-scale gap). A-values stable night over night. Baselines/check_npu.py are runner-side artifacts under /root/.cache/nightly_log/, not in the repo. Action: regenerate baseline on the runner. NOT EVALUATED on 2026-08-24: that night's run died at step 10/15 on an HBM multi-bit ECC hardware fault (new INFRA signature below) before the check step ran; expect this signature to resume once the host is fixed."
+    "note": "Aug 25 (run 32755282993 / job 97521279449, 15/15 steps): all five metrics out, unchanged from Aug 22 - mem +4.59 (A=43.89 vs B=39.297), throughput +90.83% (A=167.25 vs B=87.646), step -78.81% (A=86.87 vs B=410.057), rewards A=0.3881 vs B=-0.8556 (1.24 apart), probs_diff -76.70%. A-values stable night over night. As of 2026-08-25 the B values come from verl-ascend-recipe@f2920b43 and are byte-identical to the old stale runner-local baseline, so the stale content simply moved repos when PR #7541 wired it in. The Aug-24 HBM ECC fault did not recur; host 192.168.9.113 completed a full run. Action: regenerate baseline/a2/nightly_log/run_qwen3_vl_8b_Instruct_fsdp2_npu/baseline_qwen3_vl_8b_Instruct_fsdp2_npu.txt from current main."
   },
   "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend::hbm-multi-bit-ecc-error-rollout-engine-dead": {
     "job": "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend",
@@ -56,33 +65,33 @@
     "lastSeen": "2026-08-24",
     "count": 1,
     "draftPr": null,
-    "note": "Run 32653793181 / job 97229318565: at step 10/15 the vLLM rollout engine died with 'RuntimeError: HBM MULTI BIT ECC ERROR, EL9999' on Worker_TP1 (Device:1) of host 192.168.9.113; peer rank 0 got AclrtSynchronizeStreamWithTimeout error 507011. EngineDeadError propagated through trainer_base.step -> sleep_replicas -> ensure_alive() and ended the job; check_npu never ran. Uncorrectable device-memory hardware fault - runner maintenance (check/replace the NPU), nothing to fix in verl. gh search issues 'HBM MULTI BIT ECC' on verl-project/verl: 0 hits."
+    "note": "Run 32653793181 / job 97229318565: at step 10/15 the vLLM rollout engine died with 'RuntimeError: HBM MULTI BIT ECC ERROR, EL9999' on Worker_TP1 (Device:1) of host 192.168.9.113; peer rank 0 got AclrtSynchronizeStreamWithTimeout error 507011. EngineDeadError propagated through trainer_base.step -> sleep_replicas -> ensure_alive(). RESOLVED 2026-08-25, did not recur: the same host family completed a full 15/15 run (job 97521279449). Uncorrectable device-memory hardware fault; runner maintenance only."
   },
   "nightlyCI_dapo-moonlight-16b-megatron-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_dapo-moonlight-16b-megatron-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-24",
-    "count": 5,
+    "lastSeen": "2026-08-25",
+    "count": 6,
     "draftPr": null,
-    "note": "Failing in every completed run since >=2026-08-13. Aug 24 (run 32653793181): THREE metrics out and direction flipped - throughput -13.86% (A=74.93 vs B=86.98), first materially slower-than-baseline night (A-cluster ~95 -> 88.5 -> 74.9 over three completed nights); step +8.38% (A=447.62); probs_diff +50.42% (A=0.0379, the flappy metric, threshold 5%: in/-22.92%/+37.54%/out). Memory (-0.16) and rewards (-0.043) in band. Training 15/15. Only examples/grpo_trainer/*.sh additions (1dda039b) merged since the in-band Aug 22 run - no code path touches this job, so runner variance on 192.168.9.217 is the best explanation. WATCH: if throughput stays ~75 next night, escalate to a real investigation. Action: regenerate baseline_dapo_moonlight-16b_megatron_npu.txt on the runner."
+    "note": "Aug 25 (run 32755282993 / job 97521279374, 15/15 steps, runner ...-qwdmg): IMPROVING - only two metrics out and the Aug-24 throughput collapse reversed. Throughput back in band (A=88.22 vs B=86.976, +1.4%; Aug 24 was 74.93/-13.86%), memory in band (-0.018), rewards in band (-0.011). Out: step +8.03% (A=446.18 vs B=413.00, same +8% as Aug 24's 447.62) and probs_diff +20.23% (A=0.03026 vs B=0.02517), the known flappy metric (A has been 0.025/0.038/0.030 over the last three completed nights vs a 5% relative threshold). The Aug-24 'escalate if throughput stays ~75' watch item is CLOSED. Baseline now served from verl-ascend-recipe@f2920b43 (byte-identical to the stale runner-local file). Action: regenerate baseline_dapo_moonlight-16b_megatron_npu.txt; consider an absolute rather than relative threshold for rollout_probs_diff_mean."
   },
   "nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-19",
-    "lastSeen": "2026-08-24",
-    "count": 5,
+    "lastSeen": "2026-08-25",
+    "count": 6,
     "draftPr": null,
-    "note": "Failing identically in every completed run since >=2026-08-13; both perf metrics out in the faster direction every night (Aug 24, run 32653793181: +51.78% throughput A=72.31 vs B=47.64, -30.94% step A=73.91 vs B=107.03). Memory A=22.215595 identical to six decimals five nights running. rewards/mean in band since Aug 21 (Aug 24 diff 0.0290); probs_diff in band (3.80%). Training 15/15. Action: regenerate baseline on the runner."
+    "note": "Aug 25 (run 32755282993 / job 97521279513, 15/15 steps): perf-only, faster direction - throughput +47.36% (A=70.20 vs B=47.639), step -30.05% (A=74.86 vs B=107.026). Memory A=22.215595 GB identical to six decimals for the sixth consecutive night; rewards and probs_diff in band. Baseline now served from verl-ascend-recipe@f2920b43 (byte-identical to the stale runner-local file). Action: regenerate baseline_ppo_qwen3-8b_fsdp_npu.txt on the runner."
   },
   "nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend::check-npu-metric-validation-failed": {
     "job": "nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend",
     "verdict": "BASELINE_REGRESSION",
     "firstSeen": "2026-08-21",
-    "lastSeen": "2026-08-24",
-    "count": 2,
+    "lastSeen": "2026-08-25",
+    "count": 3,
     "draftPr": null,
-    "note": "Recurred on Aug 24 (run 32656827335) after two green nights (job not among failed jobs on Aug 22/23). Training 15/15; accuracy/memory in band; only perf metrics out, both in the FASTER direction (+13.71% throughput A=33.11 vs B=29.12; step -14.84% A=87.05 vs B=102.22). Same stale-baseline class as the a2b3-8 trio (runner 10.0.2.64). Action: regenerate baseline_gspo_qwen3_30b_megatron_npu.txt on the runner. Secondary watch item: shutdown-time DataLoader worker SIGKILL, does not fail the step."
+    "note": "Aug 25 (run 32760635755 / job 97538467742, 15/15 steps, runner linux-aarch64-a3-16-z2d58-runner-8nw7p): perf-only, faster direction and slightly smaller than Aug 24 - throughput +10.10% (A=32.06 vs B=29.115; Aug 24 +13.71%), step -12.20% (A=89.75 vs B=102.222; Aug 24 -14.84%). Memory (0.47), rewards (0.0008) and probs_diff (0.5%) in band. Baseline now served from verl-ascend-recipe@f2920b43 (byte-identical to the stale runner-local file). Action: regenerate baseline_gspo_qwen3_30b_megatron_npu.txt. Secondary watch item: shutdown-time DataLoader worker SIGKILL after 15/15, does not fail the step."
   }
 }
