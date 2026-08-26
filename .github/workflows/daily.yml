@@ -28,8 +28,8 @@ jobs:
     env:
       TZ: Asia/Shanghai # date labels follow GMT+8, same as the local setup
       # Fine-grained PAT on the fork (Contents + Workflows read/write): read
-      # verl CI, push branches to the fork, open draft PRs. Falls back to
-      # this repo's token (analysis-only) if unset.
+      # verl CI, push branches to the fork (PRs are human-opened). Falls back
+      # to this repo's token (analysis-only) if unset.
       GH_TOKEN: ${{ secrets.VERL_FORK_PAT || github.token }}
       ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
       ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}

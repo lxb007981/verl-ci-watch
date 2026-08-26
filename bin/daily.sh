@@ -185,11 +185,12 @@ log "starting headless analysis (${#FAILED_JOBS[@]} failed job(s)) — output to
 # .claude/settings.json entries are silently ignored in headless mode. These
 # mirror .claude/settings.json (which takes over once the dir is trusted).
 # Policy (user-approved 2026-08-18): broad Bash + WebSearch — the dedicated
-# PAT is content-view + PR-create only, bounding GitHub-side blast radius.
-# Hard denies still block ready/merge/comment/upstream-push/rerun/rm -rf;
-# PROMPT.md rule 5 keeps commands in simple form so denies match reliably.
+# PAT is content-view + fork-branch-push only, bounding GitHub-side blast
+# radius. Hard denies block ALL pr create (even drafts)/ready/merge/comment/
+# upstream-push/rerun/rm -rf; PROMPT.md rule 5 keeps commands in simple form
+# so denies match reliably.
 ALLOW_TOOLS='Bash,WebSearch'
-DENY_TOOLS='Bash(git push origin:*),Bash(gh pr ready:*),Bash(gh pr merge:*),Bash(gh pr comment:*),Bash(gh issue create:*),Bash(gh issue comment:*),Bash(gh run rerun:*),Bash(gh workflow:*),Bash(rm -rf:*),WebFetch'
+DENY_TOOLS='Bash(git push origin:*),Bash(gh pr create:*),Bash(gh pr ready:*),Bash(gh pr merge:*),Bash(gh pr comment:*),Bash(gh issue create:*),Bash(gh issue comment:*),Bash(gh run rerun:*),Bash(gh workflow:*),Bash(rm -rf:*),WebFetch'
 
 run_claude() {
   "$CLAUDE_BIN" -p "$PROMPT" \

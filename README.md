@@ -2,19 +2,20 @@
 
 Unattended daily watch of [verl](https://github.com/verl-project/verl)'s
 `nightly_ascend.yml` CI. Collects the last night's runs, analyzes every failed
-job, opens fix PRs in **draft** state on verl-project/verl (a human marks them
-ready), and writes a dated report.
+job, pushes `ci-fix/*` fix branches to your fork — **it never opens PRs, not
+even drafts**; a human reviews each branch and opens the PR — and writes a
+dated report.
 
 ```
 verl-ci-watch/
 ├── bin/daily.sh        # entry point — collect (deterministic) + analyze (claude -p)
 ├── PROMPT.md           # mission spec handed to the headless agent
-├── .claude/settings.json  # permission allowlist + hard denies (no upstream push, no ready/merge/comment)
+├── .claude/settings.json  # permission allowlist + hard denies (no upstream push, no PR create/ready/merge/comment)
 ├── data/<DATE>/        # runs.json, jobs tsv, failed-job logs        (generated)
 ├── reports/<DATE>.md   # the daily report                            (generated)
 ├── logs/<DATE>-agent.log  # raw headless-agent transcript            (generated)
 ├── state/seen-failures.json  # cross-day dedup memory                (generated)
-├── state/pending-prs/  # audit records of auto-opened draft PRs      (generated)
+├── state/pending-prs/  # audit records of pushed fix branches        (generated)
 └── work/verl/          # clean clone; fixes are branched here        (generated)
 ```
 
@@ -25,10 +26,10 @@ verl-ci-watch/
 2. **Analyze** (headless `claude -p`, only if something actually failed): each
    failed job gets a verdict — `VERL_BUG` / `INFRA` / `KNOWN` / `BASELINE_REGRESSION`
    / `DEPENDENCY` / `UNKNOWN` — following `PROMPT.md`. A `VERL_BUG` gets a minimal
-   fix on a `ci-fix/*` branch in `work/verl`, pushed to the fork and opened as a
-   **draft PR** on verl-project/verl, with an audit record in
-   `state/pending-prs/`. Marking a PR ready, merging, commenting, and pushing to
-   upstream are hard-denied (prompt + `deny` rules in `.claude/settings.json`
+   fix on a `ci-fix/*` branch in `work/verl`, pushed to the fork with an audit
+   record and a prepared PR body in `state/pending-prs/` — no PR is opened.
+   Opening a PR (even a draft), marking ready, merging, commenting, and pushing
+   to upstream are hard-denied (prompt + `deny` rules in `.claude/settings.json`
    and mirrored CLI flags in `bin/daily.sh`).
 3. **Report**: `reports/<DATE>.md`. Every run/job id in the report links to its
    GitHub Actions page (URL forms are injected by `bin/daily.sh`). Green or
@@ -60,14 +61,14 @@ One-time setup on the kit repo:
 ```bash
 gh secret set VERL_FORK_PAT        # fine-grained PAT on your fork
                                    # (Contents + Workflows read/write):
-                                   # pushes branches to your fork + opens draft PRs on verl-project/verl
+                                   # pushes ci-fix/* branches to your fork (PRs are human-opened)
 gh secret set ANTHROPIC_AUTH_TOKEN # API key for your Anthropic-compatible endpoint
 gh secret set ANTHROPIC_BASE_URL   # e.g. https://open.bigmodel.cn/api/anthropic
 ```
 
 Run each in a real terminal (secrets must not pass through chat transcripts).
 Without `VERL_FORK_PAT` the run degrades gracefully to analysis-only
-(collection + report, no draft PRs). Without `ANTHROPIC_AUTH_TOKEN` the
+(collection + report, no fix branches). Without `ANTHROPIC_AUTH_TOKEN` the
 analysis stage cannot run.
 
 Test end-to-end:
@@ -91,7 +92,7 @@ Notes:
 
 - **Permission posture** (user-approved 2026-08-18): broad Bash + WebSearch
   for the unattended agent; safety rests on the dedicated PAT and the hard
-  denies — `git push origin`, `gh pr ready/merge/comment`,
+  denies — `git push origin`, `gh pr create/ready/merge/comment`,
   `gh issue create/comment`, `gh run rerun`, `rm -rf` — in the
   `ALLOW_TOOLS`/`DENY_TOOLS` strings in `bin/daily.sh` (mirrored in
   `.claude/settings.json`), plus PROMPT.md rule 5 keeping commands in simple
@@ -100,24 +101,27 @@ Notes:
 - `CLAUDE_MODEL`, `CLAUDE_BIN`, `VERL_CI_REPO`, `VERL_CI_WORKFLOW` are env
   overrides (see top of `bin/daily.sh`).
 
-## Reviewing an auto-opened draft PR
+## Reviewing a pushed fix branch (you open the PR)
 
-The agent opens drafts itself; you review and promote them. Find them via the
-daily report, the audit records in `state/pending-prs/*.md`, or:
-
-```bash
-gh pr list --repo verl-project/verl --author @me --state open
-```
-
-Per draft: check the title fits verl's convention `[<modules>] <type>: <description>`,
-review the diff, fill in the remaining PR-body checklist items (CI-request Slack
-message etc.), then mark it ready:
+The agent never opens PRs. It pushes `ci-fix/*` branches to your fork, writes
+a prepared PR body to `state/pending-prs/ci-fix_<slug>.body.md`, and records an
+audit entry in `state/pending-prs/ci-fix_<slug>.md` (branch URL, compare link,
+root cause). Find candidates via the daily report, the audit records, or:
 
 ```bash
-gh pr ready --repo verl-project/verl <number>
+git ls-remote --heads https://github.com/<you>/verl 'ci-fix/*'
 ```
 
-Delete the audit `.md` after the PR is merged or closed so it isn't re-reported.
+Per branch: review the diff (the audit record's compare link is the quickest
+view), adjust the prepared title/body as needed, then open the PR yourself:
+
+```bash
+gh pr create --repo verl-project/verl --head <you>:ci-fix/<slug> \
+  --title "<title>" --body-file state/pending-prs/ci-fix_<slug>.body.md
+```
+
+Delete the audit `.md` (and `.body.md`) after the PR is merged or closed so it
+isn't re-reported.
 
 ## Housekeeping (local runs only)
 
