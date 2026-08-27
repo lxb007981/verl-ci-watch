@@ -100,7 +100,7 @@
     "firstSeen": "2026-08-26",
     "lastSeen": "2026-08-26",
     "count": 1,
-    "fixBranch": "ci-fix/quickstart-vllm-chunked-prefill",
+    "fixBranch": null,
     "note": "RESOLVED 2026-08-27 via upstream PR #7558 (8f8b1221, merged 2026-08-26 07:58Z, authored by fork owner lxb007981): dropped the stale enable_chunked_prefill=False from the four affected Ascend NPU scripts. VERIFIED GREEN Aug 27: run 33000539883, jobs 98280895912 (megatron_vllm) and 98280895917 (fsdp2_vllm) - all four quick_start jobs success. Original failure (run 32881976946 / job 97913402004): #7508 (82e35343) made build_cli_args_from_config emit --no-<flag> for Optional[bool] vLLM engine args set to False, so enable_chunked_prefill=False reached vLLM for the first time (silently dropped since #6900); verl auto-derives max_model_len=40960 from max_position_embeddings while max_num_batched_tokens stayed 8192, and vLLM rejects budget < max_model_len with chunked prefill off. Kit branch ci-fix/quickstart-vllm-chunked-prefill (eeb1813a) carried the same script deletions; its extra vllm_async_server.py fail-fast in _validate_configs was NOT included in #7558 and remains unlanded (audit: state/pending-prs/ci-fix_quickstart-vllm-chunked-prefill.md)."
   },
   "quick_start_qwen3_0_6b_fsdp2_vllm_ascend::vllm-max-num-batched-tokens-smaller-than-max-model-len": {
@@ -109,7 +109,7 @@
     "firstSeen": "2026-08-26",
     "lastSeen": "2026-08-26",
     "count": 1,
-    "fixBranch": "ci-fix/quickstart-vllm-chunked-prefill",
+    "fixBranch": null,
     "note": "RESOLVED 2026-08-27 via upstream PR #7558 - identical signature and root cause to quick_start_qwen3_0_6b_megatron_vllm_ascend (see that entry for the full analysis); script tests/special_npu/quick_start/run_qwen3_0_6b_fsdp2_vllm_ascend.sh. VERIFIED GREEN Aug 27 (run 33000539883 / job 98280895917). Both predicted follow-on breakages (grpo_qwen3_vl_8b_Instruct, dapo-moonlight-16b) also did not occur."
   }
 }
