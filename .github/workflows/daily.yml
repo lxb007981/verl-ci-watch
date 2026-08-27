@@ -6,6 +6,12 @@ on:
     # verl's nightly_ascend last wave (19:00 UTC) has a 180-min job timeout,
     # so runs can finish as late as ~22:15 UTC — don't fire earlier.
     - cron: "30 22 * * *"
+    # Safety nets (07:30 UTC+8): GitHub's scheduler is best-effort and
+    # can delay or drop a slot entirely (it dropped 2026-08-26 22:30 UTC). The
+    # guard step below turns these into cheap no-ops once the day's report
+    # exists, so only the first healthy slot does any work.
+    - cron: "30 23 * * *"
+    - cron: "30 0 * * *"
   workflow_dispatch:
     inputs:
       since-hours:
@@ -37,23 +43,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Idempotency guard for the safety-net cron slots (schedule only; manual
+      # dispatch always runs). TZ=Asia/Shanghai, so `date +%F` is the report
+      # label. A report left by a failed analysis ("Analysis stage FAILED")
+      # does NOT count as done — later slots retry it, that's their second job.
+      - name: Skip if today's report already exists
+        id: guard
+        if: github.event_name == 'schedule'
+        run: |
+          REPORT="reports/$(date +%F).md"
+          if [ -f "$REPORT" ] && ! grep -q 'Analysis stage FAILED' "$REPORT"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "$REPORT exists and is healthy — nothing to do"
+          else
+            echo "$REPORT missing or unhealthy — running"
+          fi
+
       - name: Install Claude Code
+        if: steps.guard.outputs.skip != 'true'
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Configure git (state commits + fork pushes via gh credential helper)
+        if: steps.guard.outputs.skip != 'true'
         run: |
           git config user.name "verl-ci-watch"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           gh auth setup-git
 
       - name: Run watch
+        if: steps.guard.outputs.skip != 'true'
         run: |
           ARGS=(--since-hours "${{ inputs.since-hours || '26' }}")
           if [ -n "${{ inputs.label }}" ]; then ARGS+=(--label "${{ inputs.label }}"); fi
           bash bin/daily.sh "${ARGS[@]}"
 
       - name: Persist state and reports
-        if: always()
+        if: always() && steps.guard.outputs.skip != 'true'
         run: |
           git add state reports 2>/dev/null || true
           git commit -m "watch: run of $(date +%F)" || echo "nothing to commit"

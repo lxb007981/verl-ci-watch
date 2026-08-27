@@ -51,8 +51,12 @@ bin/daily.sh --collect-only                           # collection dry-run
 
 The kit is itself a git repo with a ready workflow
 (`.github/workflows/daily.yml`): scheduled at **22:30 UTC = 06:30 Asia/Shanghai**
-plus a manual `workflow_dispatch` (with `since-hours` / `label` inputs) for
-tests and backfills. The ephemeral runner loses nothing: the workflow commits
+plus two safety-net slots (23:30 / 00:30 UTC) that no-op via a guard step once
+the day's report exists — GitHub's scheduler is best-effort and has dropped a
+slot outright (2026-08-26). A report left by a failed analysis does not count
+as done, so the later slots also retry it. Plus a manual `workflow_dispatch`
+(with `since-hours` / `label` inputs) for tests and backfills. The ephemeral
+runner loses nothing: the workflow commits
 `state/` and `reports/` back to this repo after every run; `data/`, `logs/`,
 `work/` are gitignored.
 
@@ -81,7 +85,9 @@ gh run watch
 Notes:
 
 - GitHub cron is UTC-only and may fire a few minutes late — fine here, since
-  the last nightly wave can itself run until ~22:15 UTC.
+  the last nightly wave can itself run until ~22:15 UTC. Slots can also be
+  dropped entirely under load; that is what the safety-net crons are for
+  (backfill a missed day with `gh workflow run daily.yml -f since-hours=36`).
 - Scheduled workflows auto-disable after 60 days without repo activity; the
   daily state commits keep the repo active.
 - Private-repo usage: a ~45 min/day run ≈ 1.4k Actions minutes/month, inside
