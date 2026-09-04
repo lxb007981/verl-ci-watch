@@ -42,6 +42,22 @@ Verification path: nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend should compose
 generated YAML was hand-edited to match `scripts/generate_trainer_config.sh`
 output; human should re-run that script to confirm byte-identical.
 
+## Status update — 2026-09-04: branch no longer on the fork
+
+`git ls-remote --heads lxb` on `lxb007981/verl` today shows no `ci-fix/*` heads — the branch
+(`bd7e6a85`, pushed 2026-08-29) was deleted at some point after that. No PR was ever opened
+from it (searched upstream by title, by `use_no_sync_for_gradient_accumulation`, and over the
+author's PR list — nothing), and the fix has not landed: main `84e014b4` still ships `false`
+in all 4 YAML spots (`verl/trainer/config/engine/fsdp.yaml:61` + 3× `_generated_ppo_trainer.yaml`)
+while the dataclass default remains `True`.
+
+The kit did **not** re-push: the deletion looks like an out-of-band human decision, and the
+underlying gspo-8b failure has been dormant (job green again 2026-09-03 19:13 UTC,
+run 33795055058 / job 100780629515, still composing `false`). The PR body in
+`ci-fix_fsdp-no-sync-default-true.body.md` is preserved verbatim for reuse; to resurrect,
+re-create `ci-fix/fsdp-no-sync-default-true` from `origin/main` with the same four
+`false`→`true` edits.
+
 ## Alternative (if the new default was intentional)
 
 If maintainers prefer per-micro-batch sync as the default (tonight's FSDP2 job
