@@ -49,3 +49,15 @@ checked. Verification path: next 18:00 UTC run of the job must pass the
   verl-project/verl: empty).
 - The commented-out dapo-moonlight-16b job has a copy of the same step; same
   guard needed if ever re-enabled on a baking image (noted in the PR body).
+
+## Status updates
+
+- **2026-09-06:** Signature NOT observable on the 2026-09-05 18:06 UTC night
+  (run 33983034076 / job 101351547356, still main 23af6a7a): the job died one
+  step EARLIER, at "Install the current repository" — pip build isolation
+  could not fetch `setuptools>=61.0` from pypi.org (INFRA egress flake, see
+  seen-failures `pip-install-build-deps-setuptools-pypi-unreachable`). The
+  clone step never ran, so the collision remains unfixed and latent; it will
+  fire again on the next night where pip install succeeds. Branch still
+  present on fork (verified via ls-remote, head be8d19aa); main has not moved
+  (still 23af6a7a), so no rebase needed. Still awaiting a human-opened PR.
