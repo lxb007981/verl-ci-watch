@@ -6,8 +6,9 @@
 - **Fork branch URL:** https://github.com/lxb007981/verl/tree/ci-fix/ascend-a3-mbridge-clone-collision
 - **Compare link:** https://github.com/verl-project/verl/compare/main...lxb007981:ci-fix/ascend-a3-mbridge-clone-collision
 - **PR body:** `state/pending-prs/ci-fix_ascend-a3-mbridge-clone-collision.body.md`
-- **Target jobs/runs:**
-  - nightlyCI_grpo_qwen3_5_2b_fsdp2_vllm_ascend — run 33904257189, job 101125321989 (VERL_BUG, only affected job)
+- **Target jobs/runs (nightlyCI_grpo_qwen3_5_2b_fsdp2_vllm_ascend, only affected job):**
+  - run 33904257189 / job 101125321989 (2026-09-04, first occurrence)
+  - run 34050704168 / job 101533680490 (2026-09-06 18:10 UTC, second observable occurrence)
 
 ## Root cause
 
@@ -61,3 +62,16 @@ checked. Verification path: next 18:00 UTC run of the job must pass the
   fire again on the next night where pip install succeeds. Branch still
   present on fork (verified via ls-remote, head be8d19aa); main has not moved
   (still 23af6a7a), so no rebase needed. Still awaiting a human-opened PR.
+
+- **2026-09-07:** RECURRED exactly as predicted. Run 34050704168 / job
+  101533680490 (2026-09-06 18:10 UTC, still main 23af6a7a): pip install
+  succeeded this time (build deps fetched from pypi.org fine at 18:11, verl
+  installed 18:22 — the Sep 5 pypi INFRA mask cleared), then the "Clone
+  Megatron Bridge" step failed identically: `fatal: destination path
+  '/Megatron-Bridge' already exists and is not an empty directory.` → exit
+  128 at 18:22:43, job dead before training. Initial pip list confirms the
+  baked collision precondition (megatron-bridge 0.5.0+fcbb603 at
+  /Megatron-Bridge). Branch re-verified on fork (fetched, head be8d19aa,
+  parent 23af6a7a = current origin/main) — no rebase needed, no re-push.
+  Second observable occurrence; the job fails EVERY 18:00 UTC night the
+  pypi fetch survives. Still awaiting a human-opened PR.
