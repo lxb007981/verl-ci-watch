@@ -1,14 +1,15 @@
 # ci-fix/ascend-a3-mbridge-clone-collision — audit record
 
-- **Date pushed:** 2026-09-05 (analyzing nightly window of 2026-09-04 UTC evening)
+- **Date pushed:** 2026-09-05 (analyzing nightly window of 2026-09-04 UTC evening); rebased & re-pushed 2026-09-08
 - **PR title (for the human to reuse):** `[ci] fix: clear pre-baked /Megatron-Bridge before cloning pinned commit`
-- **Branch:** `ci-fix/ascend-a3-mbridge-clone-collision` (from `origin/main` = `23af6a7a`, head `be8d19aa`)
+- **Branch:** `ci-fix/ascend-a3-mbridge-clone-collision` (originally from `origin/main` = `23af6a7a`, head `be8d19aa`; since 2026-09-08 rebased onto `origin/main` = `d040717b`, head `586416d5`, force-with-lease pushed)
 - **Fork branch URL:** https://github.com/lxb007981/verl/tree/ci-fix/ascend-a3-mbridge-clone-collision
 - **Compare link:** https://github.com/verl-project/verl/compare/main...lxb007981:ci-fix/ascend-a3-mbridge-clone-collision
 - **PR body:** `state/pending-prs/ci-fix_ascend-a3-mbridge-clone-collision.body.md`
 - **Target jobs/runs (nightlyCI_grpo_qwen3_5_2b_fsdp2_vllm_ascend, only affected job):**
   - run 33904257189 / job 101125321989 (2026-09-04, first occurrence)
   - run 34050704168 / job 101533680490 (2026-09-06 18:10 UTC, second observable occurrence)
+  - run 34150398515 / job 101831291940 (2026-09-07 18:08 UTC, third observable occurrence)
 
 ## Root cause
 
@@ -75,3 +76,16 @@ checked. Verification path: next 18:00 UTC run of the job must pass the
   parent 23af6a7a = current origin/main) — no rebase needed, no re-push.
   Second observable occurrence; the job fails EVERY 18:00 UTC night the
   pypi fetch survives. Still awaiting a human-opened PR.
+
+- **2026-09-08:** RECURRED a third time. Run 34150398515 / job 101831291940
+  (2026-09-07 18:08 UTC, main d040717b): identical failure — pip install
+  succeeded (pip dependency warnings against the baked mbridge 0.5.0+fcbb603
+  at 18:28:33), then `git clone --depth 1
+  https://github.com/NVIDIA-NeMo/Megatron-Bridge.git /Megatron-Bridge` →
+  `fatal: destination path '/Megatron-Bridge' already exists and is not an
+  empty directory.` → exit 128 at 18:28:38, job dead in setup. Initial pip
+  list again shows the baked megatron-bridge 0.5.0+fcbb603. Main moved
+  (23af6a7a → d040717b), so the branch was REBASED onto d040717b (same
+  one-line change, new head 586416d5) and force-with-lease pushed to the
+  fork. Still awaiting a human-opened PR; the job fails every 18:00 UTC
+  night whose pypi fetch survives until this lands.
