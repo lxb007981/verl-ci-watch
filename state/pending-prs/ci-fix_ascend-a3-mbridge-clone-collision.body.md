@@ -5,8 +5,9 @@
 
 Fixes the `nightlyCI_grpo_qwen3_5_2b_fsdp2_vllm_ascend` nightly job, which
 has failed every scheduled run since the Ascend a3 image was rebuilt on the
-Megatron 0.18.0 stack (#7604): the job now dies in setup at the "Clone
-Megatron Bridge" step with
+Megatron 0.18.0 stack (#7604) — 4 observable occurrences to date (2026-09-04,
+09-06, 09-07, 09-08 nights; latest run 34261271359 on main `7cb65014`): the
+job dies in setup at the "Clone Megatron Bridge" step with
 
 ```
 fatal: destination path '/Megatron-Bridge' already exists and is not an empty directory.

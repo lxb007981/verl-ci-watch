@@ -59,3 +59,19 @@ train 15/15 again.
 ## Status updates
 
 - **2026-09-08:** pushed (a56f3ec7 on d040717b). Awaiting human-opened PR.
+
+- **2026-09-09: SUPERSEDED UPSTREAM — no PR needed from this branch; safe to
+  discard.** Upstream merged `c8687a02` ("Revert '[megatron] fix: preserve R2
+  router replay for THD-packed batches' (#7786)", merged 2026-09-08 02:54 UTC),
+  a full revert of #7106 (448 deletions incl.
+  `tests/workers/engine/megatron/test_router_replay_utils_on_cpu.py` — the very
+  file this branch adds to — and the strict mapping check in
+  `verl/utils/megatron/router_replay_utils.py`; verified gone from main
+  7cb65014). The 2026-09-08 18:08 UTC nightly run (34261271359) confirms all
+  Megatron jobs train through `compute_log_prob` again on main: the gspo-30b
+  job ran a healthy 15/15 and failed only at the metric check-script. The
+  regression this branch fixed is therefore resolved upstream by revert; the
+  branch is redundant (it was built against d040717b and would now conflict
+  with the reverted test file). Branch left on the fork untouched (deletion is
+  outside this kit's push scope); recommend the human delete it when reviewing.
+  No rebase/re-push performed.
