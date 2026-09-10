@@ -64,3 +64,12 @@ If maintainers prefer per-micro-batch sync as the default (tonight's FSDP2 job
 was marginally faster with it), then instead: flip the dataclass default and
 docs to match `false`, and regenerate the Ascend recipe baselines — but do it
 deliberately; as shipped, `main` contradicts its own documented default.
+
+## Status update — 2026-09-10
+
+No new data: the signature's job (`nightlyCI_gspo-qwen3-8b-fsdp2-vllm_ascend`)
+was skipped in the 2026-09-09 18:08 UTC run (34387178376). Fix still not
+landed — main `1252cc71` still ships `false` in all 4 YAML spots
+(`verl/trainer/config/engine/fsdp.yaml:61` + `_generated_ppo_trainer.yaml`
+:46/:254/:573, verified today). Branch still absent from the fork; audit and
+PR body retained for reuse.

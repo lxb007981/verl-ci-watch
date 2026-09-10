@@ -104,3 +104,18 @@ checked. Verification path: next 18:00 UTC run of the job must pass the
   "Megatron-Bridge clone" / "Megatron-Bridge already exists"): still empty.
   Still awaiting a human-opened PR; the job fails every 18:00 UTC night
   whose pypi fetch survives until this lands.
+
+- **2026-09-10: RESOLVED UPSTREAM — branch SUPERSEDED, do NOT open a PR.**
+  verl PR #7799 (`bf84b14b`, authored by fork owner lxb007981, merged
+  2026-09-09 ~03:35 UTC as part of main `1252cc71`) fixed the job by
+  REMOVING the "Clone Megatron Bridge" step and the
+  `export PYTHONPATH=/Megatron-Bridge/src` line from
+  `nightlyCI_grpo_qwen3_5_2b_fsdp2_vllm_ascend` in `.github/workflows/
+  nightly_ascend.yml` (upstream chose removal over our rm -rf-before-clone
+  guard; equivalent effect — the image bakes mbridge 0.5.0+fcbb603 and the
+  pinned de93536e clone was redundant). VERIFIED GREEN on the first night
+  after the fix: run 34387178376 (2026-09-09 18:08 UTC, main 1252cc71),
+  job `nightlyCI_grpo_qwen3_5_2b_fsdp2_vllm_ascend` = success, alongside
+  gspo-30b and all four quick_start jobs. Branch left on the fork untouched
+  (head bf8c4495; deletion is outside kit push scope) — recommend the owner
+  discard it. PR body retained below for the record only.
