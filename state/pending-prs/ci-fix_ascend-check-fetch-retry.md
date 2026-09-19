@@ -1,11 +1,11 @@
 # ci-fix/ascend-check-fetch-retry — audit record
 
 - PR title (for the human to reuse): `[ci] fix: harden nightly Ascend check-step fetches against runner egress brownouts`
-- Branch: `ci-fix/ascend-check-fetch-retry` (head 96827a98, parent = origin/main 10db40d0)
+- Branch: `ci-fix/ascend-check-fetch-retry` (head c7d4aa3e, parent = origin/main 3efe38c7)
 - Fork branch URL: https://github.com/lxb007981/verl/tree/ci-fix/ascend-check-fetch-retry
 - Compare link: https://github.com/verl-project/verl/compare/main...lxb007981:ci-fix/ascend-check-fetch-retry
 - PR body: `state/pending-prs/ci-fix_ascend-check-fetch-retry.body.md`
-- Date pushed: 2026-09-12
+- Date pushed: 2026-09-12; REBASED 2026-09-19 onto main 3efe38c7 (was 96827a98 on 10db40d0; conflicted with #7852's qwen3_vl check-step log-diagnostics — resolution keeps #7852's wait/`ls -l`/`wc -c`/`tail` block and `--log "$LOG"` and hardens its two curl lines; delta re-verified = exactly the 10 curl lines of the 5 active jobs, yaml.safe_load OK). Still awaiting a human-opened PR.
 - Target job/run ids:
   - nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend — run 34626310730, job 103352157796 (2026-09-11 17:12 UTC, exit 56 on baseline.txt fetch after 15.5-min stall; training had completed a healthy 15/15)
   - (family precedent) same job — run 33783219400, job 100741676218 (2026-09-04, exit 52 on check_npu.py fetch after 12.6-min hang)
