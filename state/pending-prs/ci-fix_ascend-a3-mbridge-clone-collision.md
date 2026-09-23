@@ -119,3 +119,4 @@ checked. Verification path: next 18:00 UTC run of the job must pass the
   gspo-30b and all four quick_start jobs. Branch left on the fork untouched
   (head bf8c4495; deletion is outside kit push scope) — recommend the owner
   discard it. PR body retained below for the record only.
+- STATUS 2026-09-23: branch no longer present on the fork (ls-remote check) — deletion confirmed, likely by the owner per the recommendation above. Record closed; no further action from this kit.

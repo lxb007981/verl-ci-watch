@@ -75,3 +75,4 @@ train 15/15 again.
   with the reverted test file). Branch left on the fork untouched (deletion is
   outside this kit's push scope); recommend the human delete it when reviewing.
   No rebase/re-push performed.
+- STATUS 2026-09-23: branch no longer present on the fork (ls-remote check) — deletion confirmed, likely by the owner per the recommendation above. Record closed; no further action from this kit.
