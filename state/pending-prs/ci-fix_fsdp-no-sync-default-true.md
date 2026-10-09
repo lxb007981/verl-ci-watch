@@ -73,3 +73,15 @@ landed — main `1252cc71` still ships `false` in all 4 YAML spots
 (`verl/trainer/config/engine/fsdp.yaml:61` + `_generated_ppo_trainer.yaml`
 :46/:254/:573, verified today). Branch still absent from the fork; audit and
 PR body retained for reuse.
+
+## Status update — 2026-10-09
+
+Dormant signature, no action: gspo-8b ran GREEN tonight (2026-10-08 19:15 UTC
+batch, run 37830478580 / job 113494209957, success 19:15:11–19:48:57, the
+night after its uncontended actor-init kill #6). Fix still not landed — main
+`9e914d50` still ships `false` in all 4 YAML spots (fsdp.yaml:61 +
+_generated_ppo_trainer.yaml :46/:254/:576, re-verified today). Branch still
+absent from the fork (ls-remote today shows no ci-fix/fsdp-no-sync head);
+audit and PR body retained for reuse. Note: open PR #8057 adds a new
+`offload_pin_memory` key adjacent to these spots — if it merges, a resurrected
+branch must rebase over it.
