@@ -85,3 +85,5 @@ absent from the fork (ls-remote today shows no ci-fix/fsdp-no-sync head);
 audit and PR body retained for reuse. Note: open PR #8057 adds a new
 `offload_pin_memory` key adjacent to these spots — if it merges, a resurrected
 branch must rebase over it.
+- STATUS 2026-10-10: branch NO LONGER on the fork — ls-remote (2026-10-10) shows only ci-fix/ascend-check-fetch-retry remains; the fix is NOT in main (fsdp.yaml still `use_no_sync_for_gradient_accumulation: false` / router-replay empty-registry guard absent / install_vllm_mcore_npu.sh still clones Megatron-Bridge without the pre-baked-dir guard, respectively). Deleted without an upstream PR; treated as a fork-owner decision — NOT re-pushed. Audit record retained for history.
+- STATUS 2026-10-10: branch NO LONGER on the fork — ls-remote shows only ci-fix/ascend-check-fetch-retry remains; the fix is NOT in main (fsdp.yaml still ships `use_no_sync_for_gradient_accumulation: false`). Deleted without an upstream PR; treated as a fork-owner decision — NOT re-pushed. Audit record retained for history.
