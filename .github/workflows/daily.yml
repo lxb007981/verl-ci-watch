@@ -1,17 +1,17 @@
 name: nightly-verl-ci-watch
 
 on:
-  schedule:
-    # GitHub cron is UTC: 22:30 UTC == 06:30 Asia/Shanghai (GMT+8).
-    # verl's nightly_ascend last wave (19:00 UTC) has a 180-min job timeout,
-    # so runs can finish as late as ~22:15 UTC — don't fire earlier.
-    - cron: "30 22 * * *"
-    # Safety nets (07:30 UTC+8): GitHub's scheduler is best-effort and
-    # can delay or drop a slot entirely (it dropped 2026-08-26 22:30 UTC). The
-    # guard step below turns these into cheap no-ops once the day's report
-    # exists, so only the first healthy slot does any work.
-    - cron: "30 23 * * *"
-    - cron: "30 0 * * *"
+  # schedule:
+  #   # GitHub cron is UTC: 22:30 UTC == 06:30 Asia/Shanghai (GMT+8).
+  #   # verl's nightly_ascend last wave (19:00 UTC) has a 180-min job timeout,
+  #   # so runs can finish as late as ~22:15 UTC — don't fire earlier.
+  #   - cron: "30 22 * * *"
+  #   # Safety nets (07:30 UTC+8): GitHub's scheduler is best-effort and
+  #   # can delay or drop a slot entirely (it dropped 2026-08-26 22:30 UTC). The
+  #   # guard step below turns these into cheap no-ops once the day's report
+  #   # exists, so only the first healthy slot does any work.
+  #   - cron: "30 23 * * *"
+  #   - cron: "30 0 * * *"
   workflow_dispatch:
     inputs:
       since-hours:
