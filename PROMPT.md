@@ -34,7 +34,7 @@ and opens the PR.
 
 - `data/<DATE>/runs.json` — all workflow runs in the window, with conclusions.
 - `data/<DATE>/jobs_run<id>.tsv` — failed/timed-out jobs per failed run.
-- `data/<DATE>/logs/r<runId>_<jobName>.log` — full logs of each failed job
+- The log paths in the invocation context give the full logs of each failed job
   (GitHub-flavored, timestamps prefixed). `LOG FETCH FAILED` means the log
   expired; report that and stop for that job.
 - `state/seen-failures.json` — memory of failures analyzed on previous days
@@ -59,6 +59,14 @@ git -C work/verl reset --hard origin/main
 Existing `ci-fix/*` branches survive this; do not delete them.
 
 Then, **for each failed job listed in the invocation context, in order:**
+
+The collector checks maintainer rules before analysis. When a queue entry
+identifies a human-handled error, inspect the job for additional failures.
+Skip diagnosis, dedup updates and fix branches for the matched error. If
+it accounts for the whole failure, continue to the next job. The runner
+appends the reminders to the report. Only maintainers edit
+`state/human-handled.json`. Use the live failure memory for deduplication.
+The monthly archives are historical records.
 
 ### 1. Extract the failure
 
@@ -185,6 +193,6 @@ Prune entries whose `lastSeen` is older than 14 days.
   best hypothesis rather than guessing a fix. A wrong auto-prepared fix costs a
   maintainer more than a missing one.
 - The report is the product. Concrete evidence, short sentences, log quotes
-  with `r<runId>_<job>.log` references, no filler.
+  with references to the collected log filenames, no filler.
 - Your final message: the summary table and the list of branches pushed
   (with fork URLs), nothing else.

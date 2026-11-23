@@ -13,8 +13,10 @@ verl-ci-watch/
 ├── .claude/settings.json  # permission allowlist + hard denies (no upstream push, no PR create/ready/merge/comment)
 ├── data/<DATE>/        # runs.json, jobs tsv, failed-job logs        (generated)
 ├── reports/<DATE>.md   # the daily report                            (generated)
+├── reports/archive/YYYY-MM/  # older reports, grouped by reporting month
 ├── logs/<DATE>-agent.log  # raw headless-agent transcript            (generated)
 ├── state/seen-failures.json  # cross-day dedup memory                (generated)
+├── state/human-handled.json  # maintainer rules for known errors
 ├── state/pending-prs/  # audit records of pushed fix branches        (generated)
 └── work/verl/          # clean clone; fixes are branched here        (generated)
 ```
@@ -41,6 +43,8 @@ UTC+8. **06:30 UTC+8 is the intended fire time.**
 
 ## Local test run (Git Bash)
 
+The runner needs Bash, Python 3, and the GitHub CLI.
+
 ```bash
 cd /d/rl/verl-ci-watch
 bin/daily.sh --since-hours 54 --label backfill-test   # wide window, dated dir
@@ -50,7 +54,7 @@ bin/daily.sh --collect-only                           # collection dry-run
 ## Deployment A: GitHub Actions (no server needed)
 
 The kit is itself a git repo with a ready workflow
-(`.github/workflows/daily.yml`): scheduled at **22:30 UTC = 06:30 Asia/Shanghai**
+(`.github/workflows/daily.yml`). It schedules a daily **22:30 UTC = 06:30 Asia/Shanghai** run
 plus two safety-net slots (23:30 / 00:30 UTC) that no-op via a guard step once
 the day's report exists — GitHub's scheduler is best-effort and has dropped a
 slot outright (2026-08-26). A report left by a failed analysis does not count
@@ -128,6 +132,45 @@ gh pr create --repo verl-project/verl --head <you>:ci-fix/<slug> \
 
 Delete the audit `.md` (and `.body.md`) after the PR is merged or closed so it
 isn't re-reported.
+
+## Human-handled failures
+
+Edit `state/human-handled.json` and commit it to the branch used by the
+monitor. Each rule has three fields. For example, an entry might look like this.
+
+```json
+[
+  {
+    "job": "nightlyCI_ppo-qwen3-8b-fsdp-vllm_ascend",
+    "log_contains": "curl: (56) Recv failure: Connection reset by peer",
+    "reason": "Runner maintainers are investigating baseline downloads."
+  }
+]
+```
+
+Use the exact job name and a distinctive, case-sensitive literal from the
+failure output. The daily report lists each match under **Human-handled
+failures** with its job link and your reason. The monitor checks the failed
+steps when their logs are available. Mixed or ambiguous jobs still go to
+the agent to check for additional failures. Missing job logs go through
+normal triage. Delete a rule when you want investigation to resume.
+The runner records the last match date in `state/last-human-handled.json`
+so earlier dedup entries can be reconsidered after a rule is removed.
+
+## Report retention and restart
+
+Each invocation of `bin/daily.sh` moves reports older than one calendar
+month into `reports/archive/YYYY-MM/`. Dates follow Asia/Shanghai. On
+November 23, October 23 stays active and October 22 is archived. At month
+end the cutoff is clamped to the last day of the previous month. Dated
+backfills use the date in their label. Other custom labels use the date
+the runner wrote the report. Run `python bin/archive_reports.py` to rotate
+reports independently of CI collection.
+
+The October 19 failure-memory snapshot lives in
+`state/archive/2026-10/seen-failures.json`. The next run starts with empty
+active memory and the usual 26-hour collection window. Routine report
+rotation preserves the active failure memory and maintainer rules.
 
 ## Housekeeping (local runs only)
 

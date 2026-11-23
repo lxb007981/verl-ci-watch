@@ -31,7 +31,8 @@ CLAUDE_BIN="${CLAUDE_BIN:-claude}"
 WATCH_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 SINCE_HOURS=26          # covers the 3 daily waves (17/18/19 UTC) + margin
-LABEL="$(date +%F)"     # dated dir name, local calendar day
+TODAY="$(TZ=Asia/Shanghai date +%F)"
+LABEL="$TODAY"
 COLLECT_ONLY=0
 NO_LLM_REPORT=0
 
@@ -45,11 +46,19 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+case "$LABEL" in
+  ''|.|..|*/*|*\\*|*[[:cntrl:]]*) echo "expected a single report label" >&2; exit 2 ;;
+esac
+cd "$WATCH_ROOT"
+PYTHON=python3
+command -v "$PYTHON" >/dev/null || PYTHON=python
+REPORT="$("$PYTHON" bin/archive_reports.py "$LABEL")"
+REPORT="${REPORT%$'\r'}"  # Windows Python stdout
 DATA_DIR="$WATCH_ROOT/data/$LABEL"
 LOG_DIR="$DATA_DIR/logs"
 STATE_DIR="$WATCH_ROOT/state"
-REPORT="$WATCH_ROOT/reports/$LABEL.md"
-mkdir -p "$DATA_DIR" "$LOG_DIR" "$STATE_DIR" "$WATCH_ROOT/reports" "$WATCH_ROOT/logs"
+DRAFT="$DATA_DIR/report-draft.md"
+mkdir -p "$DATA_DIR" "$LOG_DIR" "$STATE_DIR/pending-prs" "$WATCH_ROOT/logs"
 
 log()  { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*"; }
 fail() { log "ERROR: $*"; exit 1; }
@@ -83,7 +92,8 @@ gh run list \
 RUNS_IN_WINDOW="$(wc -l < "$DATA_DIR/runs.tsv")"
 log "found ${RUNS_IN_WINDOW} run(s) in window"
 
-FAILED_JOBS=()   # "runId|jobId|jobName"
+MANIFEST="$DATA_DIR/failed-jobs.tsv"
+: > "$MANIFEST"
 CANCELLED_RUNS=()
 
 while IFS=$'\t' read -r run_id status conclusion _created_at; do
@@ -96,14 +106,14 @@ while IFS=$'\t' read -r run_id status conclusion _created_at; do
   [ "$conclusion" = "failure" ] || continue
 
   gh run view "$run_id" --repo "$REPO" --json jobs \
-    --jq '.jobs[] | select(.conclusion == "failure" or .conclusion == "timed_out") | [.databaseId, .name, .conclusion, .startedAt, .completedAt] | @tsv' \
+    --jq '.jobs[] | select(.conclusion == "failure" or .conclusion == "timed_out") | [.databaseId, .name, .conclusion, .startedAt, .completedAt, ([.steps[]? | select(.conclusion == "failure" or .conclusion == "timed_out")] | length)] | @tsv' \
     > "$DATA_DIR/jobs_run${run_id}.tsv"
 
-  while IFS=$'\t' read -r job_id job_name job_conclusion _ _; do
+  while IFS=$'\t' read -r job_id job_name job_conclusion _ _ step_count; do
     [ -n "$job_id" ] || continue
-    FAILED_JOBS+=("${run_id}|${job_id}|${job_name}")
     safe_name="$(printf '%s' "$job_name" | tr -c 'A-Za-z0-9._-' '_' | sed 's/_*$//;s/^_*//')"
-    out="$LOG_DIR/r${run_id}_${safe_name}.log"
+    out="$LOG_DIR/r${run_id}_${job_id}_${safe_name}.log"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$run_id" "$job_id" "$job_name" "logs/${out##*/}" "$step_count" >> "$MANIFEST"
     if [ -s "$out" ] && ! head -n1 "$out" | grep -q '^LOG FETCH FAILED'; then
       log "log already present: $out"
     else
@@ -120,11 +130,35 @@ done < "$DATA_DIR/runs.tsv"
 
 # --- decide whether the LLM stage is needed -----------------------------------
 
+if [ "$COLLECT_ONLY" = "1" ] && [ -s "$MANIFEST" ]; then
+  log "--collect-only: stopping before analysis"
+  exit 0
+fi
+
+"$PYTHON" -X utf8 bin/human_handled.py "$WATCH_ROOT" "$DATA_DIR" "$REPO" "$TODAY" < "$MANIFEST"
+QUEUE="$DATA_DIR/analysis-queue.txt"
+REMINDERS="$DATA_DIR/human-handled.md"
+
+publish_report() {
+  if [ -s "$REMINDERS" ]; then
+    printf '\n## Human-handled failures\n\n' >> "$DRAFT"
+    cat "$REMINDERS" >> "$DRAFT"
+  fi
+  if ! [[ "$LABEL" =~ ^(backfill-)?[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    printf '\n<!-- report-date: %s -->\n' "$TODAY" >> "$DRAFT"
+  fi
+  mv -- "$DRAFT" "$REPORT"
+}
+
 write_stub_report() {
   {
     echo "# verl nightly Ascend CI watch — ${LABEL}"
     echo
-    echo "- No failed jobs in the last ${SINCE_HOURS}h."
+    if [ ! -s "$MANIFEST" ]; then
+      echo "- No failed jobs in the last ${SINCE_HOURS}h."
+    elif [ -s "$QUEUE" ]; then
+      echo "- Analysis skipped (--no-llm-report)."
+    fi
     if [ "${#CANCELLED_RUNS[@]}" -gt 0 ]; then
       echo "- Cancelled runs (infra noise, not analyzed):"
       for rid in "${CANCELLED_RUNS[@]}"; do
@@ -132,17 +166,15 @@ write_stub_report() {
       done
     fi
     echo "- Raw run metadata: \`data/${LABEL}/runs.json\`"
-  } > "$REPORT"
+  } > "$DRAFT"
+  publish_report
   log "stub report written: $REPORT"
 }
 
-if [ "${#FAILED_JOBS[@]}" -eq 0 ]; then
-  log "no failed jobs — writing stub report, skipping LLM analysis"
+if [ ! -s "$QUEUE" ] || [ "$NO_LLM_REPORT" = "1" ]; then
   write_stub_report
   exit 0
 fi
-
-[ "$COLLECT_ONLY" = "1" ] && { log "--collect-only: stopping before analysis"; exit 0; }
 
 # --- stage 2: headless analysis ----------------------------------------------
 
@@ -162,24 +194,18 @@ PROMPT="$(cat "$WATCH_ROOT/PROMPT.md")
 
 - Report date label: ${LABEL}
 - Data directory: ${DATA_DIR}
-- Failed jobs to analyze (${#FAILED_JOBS[@]}):"
+- Failed jobs to analyze:
+$(cat "$QUEUE")
 
-for entry in "${FAILED_JOBS[@]}"; do
-  IFS='|' read -r run_id job_id job_name <<< "$entry"
-  safe_name="$(printf '%s' "$job_name" | tr -c 'A-Za-z0-9._-' '_' | sed 's/_*$//;s/^_*//')"
-  PROMPT="$PROMPT
-  - ${job_name} — run ${run_id}, job ${job_id}, log: ${LOG_DIR}/r${run_id}_${safe_name}.log, url: https://github.com/${REPO}/actions/runs/${run_id}/job/${job_id}"
-done
-
-PROMPT="$PROMPT
 - Cancelled runs in window (report as infra noise only): ${CANCELLED_RUNS[*]:-none}
 - Actions link forms (link every run/job id mentioned in the report to its page):
   run https://github.com/${REPO}/actions/runs/<runId>
   job https://github.com/${REPO}/actions/runs/<runId>/job/<jobId>
 - Watch root: ${WATCH_ROOT}
-- Write the dated report to: ${REPORT}"
+- Write the dated report to: ${DRAFT}"
 
-log "starting headless analysis (${#FAILED_JOBS[@]} failed job(s)) — output to logs/${LABEL}-agent.log"
+rm -f -- "$DRAFT"
+log "starting headless analysis — output to logs/${LABEL}-agent.log"
 
 # Tool permissions are passed as CLI flags because an untrusted workspace's
 # .claude/settings.json entries are silently ignored in headless mode. These
@@ -223,8 +249,11 @@ if [ "$RC" -ne 0 ]; then
     echo "  typically gateway 529 or missing/expired \`ANTHROPIC_AUTH_TOKEN\`."
     echo "- Collected data is intact under \`data/${LABEL}/\` — rerun"
     echo "  \`bin/daily.sh --label ${LABEL} --since-hours <N>\` once recovered."
-  } > "$REPORT"
-  [ "$NO_LLM_REPORT" = "1" ] || exit "$RC"
+  } > "$DRAFT"
+  publish_report
+  exit "$RC"
 fi
 
+[ -s "$DRAFT" ] || fail "agent produced no report"
+publish_report
 log "done. report: $REPORT (exit ok)"
