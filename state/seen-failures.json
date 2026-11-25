@@ -1,1 +1,47 @@
-{}
+{
+  "nightlyCI_grpo_qwen3_5_2b_fsdp_turbo_vllm_ascend::hccl-comm-init-error7-resource-unavailable": {
+    "job": "nightlyCI_grpo_qwen3_5_2b_fsdp_turbo_vllm_ascend",
+    "verdict": "INFRA",
+    "firstSeen": "2026-11-25",
+    "lastSeen": "2026-11-25",
+    "count": 1,
+    "fixBranch": null,
+    "note": "2026-11-25: torch_npu 'hcclCommInitRootInfoConfig ... error code is 7 (resource unavailable)' at the ref engine's first FSDP broadcast (engine_workers.py:631 -> fsdp_utils.py:504). NODE-LOCAL: every known occurrence of this signature (6: nightly ppo-qwen3-8b Nov 11, FSDP e2e + NPU unit tests Nov 16, nightly qwen3_vl Nov 17, fsdp2 + fsdp_turbo Nov 24) ran on pods in 10.0.1.x; 0 of 17 runs on other subnets. HCCL_HOST/NPU_SOCKET_PORT_RANGE=auto does NOT prevent it (two occurrences ran with auto), so do not prepare an 'auto ports' branch. Same scripts passed Nov 22 on other nodes. Upstream tracks it with diagnostic drafts only (#8732, #8670, #8647, #8664). Settling evidence: HCCL plog EI0019/EI0020 line from a failing run; cordon the 10.0.1.x node(s). See reports/2026-11-25.md."
+  },
+  "nightlyCI_grpo_qwen3_5_2b_fsdp2_vllm_ascend::hccl-comm-init-error7-resource-unavailable": {
+    "job": "nightlyCI_grpo_qwen3_5_2b_fsdp2_vllm_ascend",
+    "verdict": "INFRA",
+    "firstSeen": "2026-11-25",
+    "lastSeen": "2026-11-25",
+    "count": 1,
+    "fixBranch": null,
+    "note": "2026-11-25: same signature as the fsdp_turbo entry (pod 10.0.1.92). Node-local, not a verl regression; passed Nov 22. Before this the job failed Nov 19-21 on a different signature (position_ids / split_with_sizes, see #8807) which is not in this memory. See reports/2026-11-25.md."
+  },
+  "quick_start_qwen3_0_6b_megatron_sglang_ascend::megatron-bridge-missing-after-vanilla-mbridge-removal": {
+    "job": "quick_start_qwen3_0_6b_megatron_sglang_ascend",
+    "verdict": "DEPENDENCY",
+    "firstSeen": "2026-09-30",
+    "lastSeen": "2026-11-25",
+    "count": 28,
+    "fixBranch": null,
+    "note": "2026-11-25: 'ModuleNotFoundError: No module named megatron.bridge' at the first Megatron engine (transformer_impl.py:339). firstSeen and the first 20 counts are carried from the October archive; the remaining 8 are nights verified since (lower bound). Cause: latest-sglang-a3-ubuntu has no Megatron-Bridge and cannot be rebuilt - docker-build-ascend-sglang-a3 fails daily because Dockerfile.ascend.sglang_8.5.0_a3 clones Megatron-LM core_r0.18.0 (Python >=3.12) onto a Python 3.11 base; Megatron-Bridge on PyPI also needs >=3.12, so no job-level pip workaround. The repo's PR-level Megatron+SGLang e2e jobs are already disabled for this reason. Not auto-fixable: needs an image port validated on A3. See reports/2026-11-25.md."
+  },
+  "nightlyCI_grpo-qwen3-30b-megatron-sglang_ascend::megatron-bridge-missing-after-vanilla-mbridge-removal": {
+    "job": "nightlyCI_grpo-qwen3-30b-megatron-sglang_ascend",
+    "verdict": "DEPENDENCY",
+    "firstSeen": "2026-10-10",
+    "lastSeen": "2026-11-25",
+    "count": 19,
+    "fixBranch": null,
+    "note": "2026-11-25: same cause as the quick_start megatron_sglang entry (image lacks Megatron-Bridge; build broken on py3.11). The check step's '日志中无有效step' is a consequence of the crash, not a baseline regression. firstSeen and the first 11 counts are from the October archive. See reports/2026-11-25.md."
+  },
+  "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend::check-npu-metric-validation-failed": {
+    "job": "nightlyCI_grpo_qwen3_vl_8b_Instruct_fsdp2_vllm_ascend",
+    "verdict": "BASELINE_REGRESSION",
+    "firstSeen": "2026-10-15",
+    "lastSeen": "2026-11-25",
+    "count": 9,
+    "fixBranch": null,
+    "note": "2026-11-25: perf-only check failure (throughput -6.19%, timing_s/step +6.23% vs the 5% thresholds; accuracy and memory in band). The baseline is fetched from a baseline/a2/ path while the job runs on A3; no a3 baseline is published for it. The job has two speed regimes: ~72 s/step (Nov 12, 14, 15) and ~91-93 s/step (Nov 13, 16, 19-22, 24), same config and tokens; old_log_prob 9.4 s vs 16.6 s. Not node-bound (slow on six subnets since Nov 16), not explained by image pip contents, cause UNKNOWN - do not guess a fix; needs a bisect on NPU (candidate window: commits merged Nov 15 17:07 to Nov 16 17:07 UTC, #8625 / #8709 included but not implicated by inspection). firstSeen and the first 2 counts are from the October archive. See reports/2026-11-25.md."
+  }
+}
