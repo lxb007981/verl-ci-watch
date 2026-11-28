@@ -5,7 +5,7 @@
 
 Fixes an NPU regression from #8780 (`95ede340`): the bucketed vLLM refit of an **unquantized MoE** model crashes at its first weight sync on Ascend.
 
-`nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend` (Qwen3-30B-A3B, Megatron TP=2/EP=8 to vLLM TP=8) passed on Nov 24 and Nov 25 ([139407565297](https://github.com/verl-project/verl/actions/runs/45671460966/job/139407565297)) and died on Nov 26, the first nightly that carried #8780 ([140093159472](https://github.com/verl-project/verl/actions/runs/45873069877/job/140093159472)):
+`nightlyCI_gspo-qwen3-30b-megatron-vllm_ascend` (Qwen3-30B-A3B, Megatron TP=2/EP=8 to vLLM TP=8) passed on Nov 24 and Nov 25 ([139407565297](https://github.com/verl-project/verl/actions/runs/45671460966/job/139407565297)) and has died at its first weight sync every night since: Nov 26, the first nightly that carried #8780 ([140093159472](https://github.com/verl-project/verl/actions/runs/45873069877/job/140093159472)), and Nov 27 on `f4fb2b63` ([140667789320](https://github.com/verl-project/verl/actions/runs/46046744980/job/140667789320)). The Nov 26 traceback, abbreviated:
 
 ```
 File "/__w/verl/verl/verl/workers/rollout/vllm_rollout/utils.py", line 488, in _update_weights
@@ -17,7 +17,9 @@ RuntimeError: copy_d2d_baseformat_opapi:../torch_npu/csrc/aten/ops/op_api/CopyKe
     Reason: The tensor whose shape is [96, 2048] and the tensor whose shape is [96, 192] do not meet the broadcast condition.
 ```
 
-The job is easy to miss: the crash happens 7 minutes in, but the trainer never surfaces it, so GitHub records the job as `cancelled` at the 180-minute timeout.
+On Nov 27 the terminal error was identical; only verl's line numbers moved with `f4fb2b63`: `update_weights_from_ipc` (`utils.py:431`) → `BucketedWeightReceiver.receive_weights` (`bucketed_weight_transfer.py:325`) → `_update_weights` (`utils.py:496`) → the same `routed_experts.py:508`.
+
+The job is easy to miss: the crash happens 7–13 minutes in, but the trainer never surfaces it, so GitHub records the job as `cancelled` at the 180-minute timeout.
 
 **Why.** vllm-ascend's `AscendUnquantizedFusedMoEMethod.process_weights_after_loading` transposes `w13_weight` / `w2_weight` to `[E, H, 2I]` / `[E, I, H]`. A refit's checkpoint-layout loads only fit those parameters if something views them back to the checkpoint layout first. Before #8780, `stage_unquantized_moe_params` / `fold_unquantized_moe_params` did that on every device. #8780 replaced them with vLLM's `start_reload` / `finish_reload` on non-NPU devices and left NPU on the bare `process_weights_after_loading` path. The Ascend image ships vLLM 0.30.0, which has no `start_reload`, so on NPU nothing prepares the expert weights any more. vLLM 0.30.0 then slices the `[768, 2048]` expert load to this rank's `[96, 2048]` (768 / TP 8) and narrows the transposed `[2048, 192]` slot as if it were `[2I, H]`, down to `[96, 192]` — the two shapes in the error.
 
@@ -42,13 +44,20 @@ Evidence that the regression is #8780, from the logs of the passing and the fail
 - Same vLLM 0.30.0, torch 2.10.0, torch-npu 2.10.0.post7, megatron-core 0.18.2. `vllm-ascend` moved by two commits: `790a881706` (a docs file) and `a2ed69c2b3` (a sparse-attention kernel rename).
 - `95ede340` is the only commit on the refit path in `d577845e..8612d029`.
 
-Commands run locally, CPU only (Python 3.14, torch 2.15.0+cpu, pytest 9.2.0, vLLM stubbed by the tests):
+What the fix relies on in the Ascend image's stack, read from the sources at the versions the job log reports (not executed):
+
+- vllm-ascend `a2ed69c2b3`, `vllm_ascend/ops/fused_moe/routed_experts.py`: `AscendUnquantizedFusedMoEMethod` subclasses vLLM's `UnquantizedFusedMoEMethod` (line 52), which is the gate the staging selects layers by; lines 107–111 transpose `w13` / `w2` and install them through vllm-ascend's own imported `replace_parameter`, which the fold's patch does not intercept, so the context manager folds them on exit.
+- vLLM `v0.30.0`: `unquantized_fused_moe_method.py` imports `replace_parameter`; `model_loader/utils.py:60` calls `record_metadata_for_reloading(model)` unconditionally at model init, so the checkpoint shapes the staging reads are on record at refit time; `fused_moe/routed_experts.py` has `_load_w13` at line 459 and the `copy_` at 508, the lines in the traceback. The image reports `vllm 0.30.0+empty` from an editable install, so "the `v0.30.0` tag" is inferred from the version string and these line numbers.
+
+Commands run locally, CPU only (Python 3.14, torch 2.15.0+cpu, pytest 9.2.0, ruff 0.12.2, plus the numpy, ray, tensordict, omegaconf and transformers that `verl/__init__.py` imports; vLLM stubbed by the tests):
 
 - `pytest tests/utils/test_vllm_unquant_utils_on_cpu.py`: **11 passed**. Ten are the test file deleted in #8780, restored. One is new and models vllm-ascend (transposed layout installed through an unpatched `replace_parameter`): a checkpoint-layout load raises before staging and is folded back into the live storage after.
-- `pytest tests/workers/rollout/test_vllm_weight_update_utils_on_cpu.py`: **21 passed** on this branch. The new `test_npu_unquantized_moe_refit_is_bracketed_by_moe_staging[False]` fails on unmodified `main` (`f4fb2b63`) with `['bucket', 'bucket', 'postprocess']`, i.e. no staging and no fold; `[True]` (quantized) passes on both.
-- `ruff check` and `ruff format --check` (0.12.2, the pre-commit pin), plus the repo's `check_license`, `check_device_api_usage`, `validate_structure` scripts: clean.
+- `pytest tests/workers/rollout/test_vllm_weight_update_utils_on_cpu.py`: **21 passed** on this branch. The new `test_npu_unquantized_moe_refit_is_bracketed_by_moe_staging[False]` fails on unmodified `main` (`22a8903a`) with `['bucket', 'bucket', 'postprocess']`, i.e. no staging and no fold; `[True]` (quantized) passes on both.
+- `ruff check` and `ruff format --check` (0.12.2, the pre-commit pin) on the four changed files, plus the repo's `check_license`, `check_docstrings`, `check_device_api_usage`, `validate_structure` scripts: clean.
 
 The CPU tests exercise the control flow and the staging logic against stubs. They do not show that the fold yields correct weights on NPU; only the nightly does.
+
+These commands were run twice with the same results: on 2026-11-27 on commit `47672a6f` (`f4fb2b63` + this change) and on 2026-11-28 on the rebased commit `6cb46cdb` (`22a8903a` + this change). `git range-diff` reports the two commits as identical. Not run: the full pre-commit suite, and anything on NPU.
 
 ### API and Usage Example
 
